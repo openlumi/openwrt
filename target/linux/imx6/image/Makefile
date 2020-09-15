@@ -130,6 +130,29 @@ define Device/Default
   IMAGES :=
 endef
 
+define Device/lumi
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Lumi Gateway
+  DEVICE_VARIANT := MIEU01
+  BOARDNAME:= fsl,imx6ull-14x14-evk
+
+  FILESYSTEMS += ubifs
+  UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_INSTALL := 0
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin
+  IMAGES := ubinized.bin sysupgrade.tar
+  IMAGE/ubinized.bin := append-ubi
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+
+  DEVICE_DTS:= \
+	imx6ull-14x14-evk
+endef
+TARGET_DEVICES += lumi
+
+
 define Device/ventana
   DEVICE_VENDOR := Gateworks
   DEVICE_MODEL := Ventana family
