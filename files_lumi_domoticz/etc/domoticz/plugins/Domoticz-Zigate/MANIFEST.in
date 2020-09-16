@@ -1,0 +1,11 @@
+include LICENSE.txt
+include ReleaseNotes.md
+include readme.md
+include Classes
+include Conf
+include Data
+include Modules
+include plugin.py
+include ReleaseNotes.md
+include Tools
+include www
