@@ -142,10 +142,12 @@ define Device/lumi
   PAGESIZE := 2048
   KERNEL_INSTALL := 0
   KERNEL_NAME := zImage
+  KERNEL_SUFFIX := -zImage
   KERNEL := kernel-bin
-  IMAGES := ubinized.bin sysupgrade.tar
+  IMAGES := ubinized.bin sysupgrade.tar dtb
   IMAGE/ubinized.bin := append-ubi
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/dtb := install-dtb
 
   DEVICE_DTS:= \
 	imx6ull-14x14-evk
