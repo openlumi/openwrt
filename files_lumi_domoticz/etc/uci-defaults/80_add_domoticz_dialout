@@ -1,0 +1,5 @@
+. /lib/functions.sh
+
+group_add_user "dialout" "domoticz"
+
+exit 0
