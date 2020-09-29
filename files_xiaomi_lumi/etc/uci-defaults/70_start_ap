@@ -1,0 +1,10 @@
+uci set wireless.radio0.disabled='0'
+uci commit wireless
+
+uci set network.lan.ifname='wlan0'
+uci delete network.lan.type
+uci set network.wwan='interface'
+uci set network.wwan.proto='dhcp'
+uci commit network
+
+exit 0
