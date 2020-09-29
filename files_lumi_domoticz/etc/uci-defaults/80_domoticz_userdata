@@ -1,0 +1,4 @@
+sed -i -e "s:option userdata .*:option userdata '/etc/domoticz/':"     /etc/config/domoticz
+chown -R domoticz:domoticz "/etc/domoticz"
+
+exit 0
