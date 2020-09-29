@@ -10,8 +10,4 @@ echo 0 > /sys/class/backlight/lumi_r/brightness
 echo 0 > /sys/class/backlight/lumi_g/brightness
 echo 0 > /sys/class/backlight/lumi_b/brightness
 
-wpa_supplicant -iwlan0 -c/etc/wpa_supplicant.conf &
-udhcpc -i wlan0 &
-sed -i -e 's/127.0.0.1/8.8.8.8/g' /etc/resolv.conf
-
 exit 0
