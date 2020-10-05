@@ -134,7 +134,7 @@ define Device/lumi
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Lumi Gateway
   DEVICE_VARIANT := MIEU01
-  BOARDNAME:= fsl,imx6ull-14x14-evk
+  BOARDNAME:= xiaomi,gateway-lumi
 
   FILESYSTEMS += ubifs
   UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
@@ -150,7 +150,7 @@ define Device/lumi
   IMAGE/dtb := install-dtb
 
   DEVICE_DTS:= \
-	imx6ull-14x14-evk
+	imx6ull-14x14-lumi
 endef
 TARGET_DEVICES += lumi
 
