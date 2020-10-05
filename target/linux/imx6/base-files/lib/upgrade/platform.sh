@@ -40,7 +40,8 @@ platform_check_image() {
 	apalis*)
 		return 0
 		;;
-	*gw5*)
+	*gw5* |\
+	xiaomi,gateway-lumi )
 		nand_do_platform_check $board $1
 		return $?;
 		;;
@@ -57,7 +58,9 @@ platform_do_upgrade() {
 	apalis*)
 		apalis_do_upgrade "$1"
 		;;
-	*gw5*)
+	*gw5* |\
+	xiaomi,gateway-lumi |\
+	fsl,imx6ull-14x14-evk)
 		nand_do_upgrade "$1"
 		;;
 	esac
