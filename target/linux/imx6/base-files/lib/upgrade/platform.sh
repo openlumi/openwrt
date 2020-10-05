@@ -36,6 +36,8 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
+	xiaomi,gateway-lumi |\
+	fsl,imx6ull-14x14-evk |\
 	gw,imx6dl-gw51xx |\
 	gw,imx6dl-gw52xx |\
 	gw,imx6dl-gw53xx |\
@@ -79,6 +81,8 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	xiaomi,gateway-lumi |\
+	fsl,imx6ull-14x14-evk |\
 	gw,imx6dl-gw51xx |\
 	gw,imx6dl-gw52xx |\
 	gw,imx6dl-gw53xx |\
