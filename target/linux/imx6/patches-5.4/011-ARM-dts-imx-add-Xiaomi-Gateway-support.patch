@@ -10,7 +10,7 @@
  	imx6ull-phytec-segin-ff-rdk-nand.dtb \
 --- a/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
 +++ b/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,242 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +//
 +// Copyright (C) 2016 Freescale Semiconductor, Inc.
@@ -58,6 +58,59 @@
 +		default-brightness-level = <0x00>;
 +		status = "okay";
 +	};
++
++	tfa9882: tfa9882 {
++		#sound-dai-cells = <0>;
++		compatible = "fsl,tfa9882";
++		clocks = <&clks IMX6UL_CLK_SAI1>;
++		clock-names = "mclk";
++	};
++
++	sound-tfa9882 {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "tfa9882-audio";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,frame-master = <&cpudai>;
++		simple-audio-card,bitclock-master = <&cpudai>;
++		simple-audio-card,widgets =
++			"Line", "Left Line Out Jack",
++			"Line", "Right Line Out Jack";
++		simple-audio-card,routing =
++			"Left Line Out Jack", "LINEVOUTL",
++			"Right Line Out Jack", "LINEVOUTR";
++
++		cpudai: simple-audio-card,cpu {
++			sound-dai = <&sai1>;
++			dai-tdm-slot-num = <2>;
++			dai-tdm-slot-width = <32>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&tfa9882>;
++			clocks = <&clks IMX6UL_CLK_SAI1>;
++			clock-names = "mclk";
++		};
++	};
++};
++
++&sai1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai1>;
++	assigned-clocks = <&clks IMX6UL_CLK_SAI1_SEL>,
++			<&clks IMX6UL_CLK_SAI1>;
++	assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <0>, <12288000>;
++	fsl,sai-mclk-direction-output;
++	status = "okay";
++};
++
++&sai2 {
++	status = "disabled";
++};
++
++&clks {
++	assigned-clocks = <&clks IMX6UL_CLK_PLL3_PFD2>,<&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <320000000>,<786432000>;
 +};
 +
 +&gpmi {
@@ -132,6 +185,14 @@
 +		fsl,pins = <
 +			MX6UL_PAD_ENET2_RX_DATA0__GPIO2_IO08	   0x000010B0
 +			MX6UL_PAD_ENET2_RX_DATA1__GPIO2_IO09	   0x000010B0
++		>;
++	};
++
++	pinctrl_sai1: sai1grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_DATA04__SAI1_TX_SYNC 0x17088
++			MX6UL_PAD_CSI_DATA05__SAI1_TX_BCLK 0x17088
++			MX6UL_PAD_CSI_DATA07__SAI1_TX_DATA 0x11088
 +		>;
 +	};
 +};
