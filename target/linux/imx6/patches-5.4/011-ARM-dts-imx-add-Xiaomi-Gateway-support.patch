@@ -10,7 +10,7 @@
  	imx6ull-phytec-segin-ff-rdk-nand.dtb \
 --- a/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
 +++ b/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
-@@ -0,0 +1,242 @@
+@@ -0,0 +1,258 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +//
 +// Copyright (C) 2016 Freescale Semiconductor, Inc.
@@ -120,6 +120,13 @@
 +	nand-on-flash-bbt;
 +};
 +
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
 +&iomuxc {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&pinctrl_jnflash>;
@@ -155,6 +162,15 @@
 +		fsl,pins = <
 +			MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX	0x1b0b1
 +			MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX	0x1b0b1
++		>;
++	};
++
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX 0x1b0b1
++			MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS  0x1b0b1
++			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS  0x1b0b1
 +		>;
 +	};
 +
