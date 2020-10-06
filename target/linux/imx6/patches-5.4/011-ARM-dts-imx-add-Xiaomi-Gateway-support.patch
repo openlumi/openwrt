@@ -10,7 +10,7 @@
  	imx6ull-phytec-segin-ff-rdk-nand.dtb \
 --- a/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
 +++ b/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
-@@ -0,0 +1,274 @@
+@@ -0,0 +1,293 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +//
 +// Copyright (C) 2016 Freescale Semiconductor, Inc.
@@ -33,6 +33,19 @@
 +
 +	backlight_display: backlight-display {
 +		status = "disabled";
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_bnt0_key>;
++
++		btn0 {
++			label = "btn0";
++			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <10>;
++		};
 +	};
 +
 +	lumi_g {
@@ -215,6 +228,12 @@
 +	pinctrl_adc1: adc1grp {
 +        	fsl,pins = <
 +			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05           0x000000B0
++		>;
++	};
++
++	pinctrl_bnt0_key: btn0grp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15          0x000010B0
 +		>;
 +	};
 +};
