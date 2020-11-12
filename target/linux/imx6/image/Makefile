@@ -134,7 +134,7 @@ define Device/lumi
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Lumi Gateway
   DEVICE_VARIANT := MIEU01
-  BOARDNAME:= xiaomi,gateway-lumi
+  DEVICE_NAME := xiaomi,gateway-lumi
 
   FILESYSTEMS += ubifs
   UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
@@ -144,9 +144,9 @@ define Device/lumi
   KERNEL_NAME := zImage
   KERNEL_SUFFIX := -zImage
   KERNEL := kernel-bin
-  IMAGES := ubinized.bin sysupgrade.tar dtb
+  IMAGES := sysupgrade.bin dtb
   IMAGE/ubinized.bin := append-ubi
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/dtb := install-dtb
 
   DEVICE_DTS:= \
