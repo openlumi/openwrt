@@ -151,8 +151,7 @@ define Device/lumi
   IMAGE/dtb := install-dtb
 
   DEVICE_DTS:= \
-	imx6ull-14x14-evk.dts
-
+	imx6ull-14x14-evk
 
 #	imx6ull-xiaomi-lumi
 endef
