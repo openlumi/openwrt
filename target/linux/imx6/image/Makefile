@@ -131,6 +131,7 @@ define Device/Default
 endef
 
 define Device/lumi
+  DEVICE_TITLE := Xiaomi Lumi Gateway MIEU01
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Lumi Gateway
   DEVICE_VARIANT := MIEU01
@@ -150,7 +151,10 @@ define Device/lumi
   IMAGE/dtb := install-dtb
 
   DEVICE_DTS:= \
-	imx6ull-xiaomi-lumi
+	imx6ull-14x14-evk.dts
+
+
+#	imx6ull-xiaomi-lumi
 endef
 TARGET_DEVICES += lumi
 
