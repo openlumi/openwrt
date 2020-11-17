@@ -1,0 +1,517 @@
+From: Alexey Sadkov <alx.v.sadkov@gmail.com>
+Date: Fri, 7 Nov 2020 7:49:17 +0300
+Subject: Add dts support for Xiaomi Lumi Gateway MIEU01.
+---
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -478,6 +478,7 @@
+ 	imx6ul-isiot-emmc.dtb \
+ 	imx6ul-isiot-nand.dtb \
+ 	imx6ul-liteboard.dtb \
++	imx6ull-xiaomi-lumi.dtb \
+ 	imx6ul-opos6uldev.dtb \
+ 	imx6ul-pico-hobbit.dtb \
+ 	imx6ul-tx6ul-0010.dtb \
+--- a/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
++++ b/arch/arm/boot/dts/imx6ull-xiaomi-lumi.dts
+@@ -0,0 +1,500 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++//
++// Copyright (C) 2016 Freescale Semiconductor, Inc.
++
++/dts-v1/;
++
++#include "imx6ul.dtsi"
++#include "imx6ull-pinfunc.h"
++
++
++/ {
++	model = "Xiaomi Gateway Lumi";
++	compatible = "xiaomi,gateway-lumi", "fsl,imx6ull-14x14-evk", "fsl,imx6ull";
++
++	chosen {
++		stdout-path = &uart1;
++	};
++
++	memory {
++		reg = <0x80000000 0x20000000>;
++	};
++	regulators {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		reg_sd1_vmmc: sd1_regulator {
++			compatible = "regulator-fixed";
++			regulator-name = "VSD_3V3";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++			regulator-always-on;
++		};
++	};
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_bnt0_key>;
++
++		btn0 {
++			label = "btn0";
++			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <10>;
++		};
++	};
++
++	lumi_g {
++		compatible = "pwm-backlight";
++		pwms = <&pwm1 0x00 5000000>;
++			brightness-levels = <0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0a 0x0b 0x0c 0x0d 0x0e 0x0f 0x10 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x20 0x21 0x22 0x23 0x24 0x25 0x26 0x27 0x28 0x29 0x2a 0x17 0x2c 0x2d 0x2e 0x2f 0x30 0x31 0x32 0x33 0x34 0x35 0x36 0x37 0x38 0x39 0x3a 0x3b 0x3c 0x3d 0x3e 0x3f 0x40 0x41 0x42 0x43 0x44 0x45 0x46 0x47 0x48 0x49 0x4a 0x4b 0x4c 0x4d 0x4e 0x4f 0x50 0x51 0x52 0x53 0x54 0x55 0x56 0x57 0x58 0x59 0x5a 0x5b 0x5c 0x5d 0x5e 0x5f 0x60 0x61 0x62 0x63 0x64>;
++		default-brightness-level = <0x00>;
++		status = "okay";
++	};
++
++	lumi_r {
++		compatible = "pwm-backlight";
++		pwms = <&pwm2 0x00 5000000>;
++			brightness-levels = <0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0a 0x0b 0x0c 0x0d 0x0e 0x0f 0x10 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x20 0x21 0x22 0x23 0x24 0x25 0x26 0x27 0x28 0x29 0x2a 0x17 0x2c 0x2d 0x2e 0x2f 0x30 0x31 0x32 0x33 0x34 0x35 0x36 0x37 0x38 0x39 0x3a 0x3b 0x3c 0x3d 0x3e 0x3f 0x40 0x41 0x42 0x43 0x44 0x45 0x46 0x47 0x48 0x49 0x4a 0x4b 0x4c 0x4d 0x4e 0x4f 0x50 0x51 0x52 0x53 0x54 0x55 0x56 0x57 0x58 0x59 0x5a 0x5b 0x5c 0x5d 0x5e 0x5f 0x60 0x61 0x62 0x63 0x64>;
++		default-brightness-level = <0x00>;
++		status = "okay";
++	};
++
++	lumi_b {
++		compatible = "pwm-backlight";
++		pwms = <&pwm3 0x00 5000000>;
++			brightness-levels = <0x00 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0a 0x0b 0x0c 0x0d 0x0e 0x0f 0x10 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x20 0x21 0x22 0x23 0x24 0x25 0x26 0x27 0x28 0x29 0x2a 0x17 0x2c 0x2d 0x2e 0x2f 0x30 0x31 0x32 0x33 0x34 0x35 0x36 0x37 0x38 0x39 0x3a 0x3b 0x3c 0x3d 0x3e 0x3f 0x40 0x41 0x42 0x43 0x44 0x45 0x46 0x47 0x48 0x49 0x4a 0x4b 0x4c 0x4d 0x4e 0x4f 0x50 0x51 0x52 0x53 0x54 0x55 0x56 0x57 0x58 0x59 0x5a 0x5b 0x5c 0x5d 0x5e 0x5f 0x60 0x61 0x62 0x63 0x64>;
++		default-brightness-level = <0x00>;
++		status = "okay";
++	};
++
++	tfa9882: tfa9882 {
++		#sound-dai-cells = <0>;
++		compatible = "fsl,tfa9882";
++		clocks = <&clks IMX6UL_CLK_SAI1>;
++		clock-names = "mclk";
++	};
++
++	sound-tfa9882 {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "tfa9882-audio";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,frame-master = <&cpudai>;
++		simple-audio-card,bitclock-master = <&cpudai>;
++		simple-audio-card,widgets =
++			"Line", "Left Line Out Jack",
++			"Line", "Right Line Out Jack";
++		simple-audio-card,routing =
++			"Left Line Out Jack", "LINEVOUTL",
++			"Right Line Out Jack", "LINEVOUTR";
++
++		cpudai: simple-audio-card,cpu {
++			sound-dai = <&sai1>;
++			dai-tdm-slot-num = <2>;
++			dai-tdm-slot-width = <32>;
++		};
++
++		codecdai: simple-audio-card,codec {
++			sound-dai = <&tfa9882>;
++			clocks = <&clks IMX6UL_CLK_SAI1>;
++			clock-names = "mclk";
++		};
++	};
++};
++
++&clks {
++	assigned-clocks = <&clks IMX6UL_CLK_PLL3_PFD2>,<&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <320000000>,<786432000>;
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_jnflash>;
++	pinctrl_gpio: gpio {
++		fsl,pins = <
++                MX6UL_PAD_LCD_DATA00__GPIO3_IO05           0x000010B0
++                MX6UL_PAD_LCD_DATA01__GPIO3_IO06           0x000010B0
++                MX6UL_PAD_LCD_DATA05__GPIO3_IO10           0x000010B0
++                MX6UL_PAD_LCD_DATA06__GPIO3_IO11           0x000010B0
++                MX6UL_PAD_LCD_DATA08__GPIO3_IO13           0x000010B0
++                MX6UL_PAD_LCD_DATA09__GPIO3_IO14           0x000010B0
++                MX6UL_PAD_LCD_DATA13__GPIO3_IO18           0x000010B0
++                MX6UL_PAD_LCD_DATA14__GPIO3_IO19           0x000010B0
++                MX6UL_PAD_LCD_DATA17__GPIO3_IO22           0x000010B0
++                MX6UL_PAD_LCD_DATA18__GPIO3_IO23           0x000010B0
++                MX6UL_PAD_LCD_DATA21__GPIO3_IO26           0x000010B0
++                MX6UL_PAD_LCD_DATA22__GPIO3_IO27           0x000010B0
++		>;
++ 	};
++
++	pinctrl_gpmi_nand_1: gpmi-nand-1 {
++		fsl,pins = <
++			MX6UL_PAD_NAND_CLE__RAWNAND_CLE		 0xb0b1
++			MX6UL_PAD_NAND_ALE__RAWNAND_ALE		 0xb0b1
++			MX6UL_PAD_NAND_WP_B__RAWNAND_WP_B	   0xb0b1
++			MX6UL_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
++			MX6UL_PAD_NAND_CE0_B__RAWNAND_CE0_B	 0xb0b1
++			MX6UL_PAD_NAND_CE1_B__RAWNAND_CE1_B	 0xb0b1
++			MX6UL_PAD_NAND_RE_B__RAWNAND_RE_B	   0xb0b1
++			MX6UL_PAD_NAND_WE_B__RAWNAND_WE_B	   0xb0b1
++			MX6UL_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
++			MX6UL_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
++			MX6UL_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
++			MX6UL_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
++			MX6UL_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
++			MX6UL_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
++			MX6UL_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
++			MX6UL_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
++		>;
++ 	};
++
++	pinctrl_uart1: uart1grp {
++		fsl,pins = <
++			MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART1_RX_DATA__UART1_DCE_RX 0x1b0b1
++		>;
++	};
++
++	pinctrl_uart2: uart2grp {
++		fsl,pins = <
++			MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX	0x1b0b1
++			MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX	0x1b0b1
++		>;
++	};
++
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX 0x1b0b1
++			MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS  0x1b0b1
++			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS  0x1b0b1
++		>;
++	};
++
++	pinctrl_pwm1: pwm1grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO08__PWM1_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_pwm2: pwm2grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO09__PWM2_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_pwm3: pwm3grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO04__PWM3_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <
++			MX6UL_PAD_SD1_CMD__USDHC1_CMD	 	0x17059
++			MX6UL_PAD_SD1_CLK__USDHC1_CLK	 	0x10059
++			MX6UL_PAD_SD1_DATA0__USDHC1_DATA0 	0x17059
++			MX6UL_PAD_SD1_DATA1__USDHC1_DATA1 	0x17059
++			MX6UL_PAD_SD1_DATA2__USDHC1_DATA2 	0x17059
++			MX6UL_PAD_SD1_DATA3__USDHC1_DATA3 	0x17059
++		>;
++	};
++
++	pinctrl_jnflash: jnflashgrp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_DATA0__GPIO2_IO08	   0x000010B0
++			MX6UL_PAD_ENET2_RX_DATA1__GPIO2_IO09	   0x000010B0
++		>;
++	};
++
++	pinctrl_sai1: sai1grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_DATA04__SAI1_TX_SYNC 0x17088
++			MX6UL_PAD_CSI_DATA05__SAI1_TX_BCLK 0x17088
++			MX6UL_PAD_CSI_DATA07__SAI1_TX_DATA 0x11088
++		>;
++	};
++
++	pinctrl_sai2: sai2grp {
++		fsl,pins = <
++			MX6UL_PAD_JTAG_TDI__SAI2_TX_BCLK	0x17088
++			MX6UL_PAD_JTAG_TDO__SAI2_TX_SYNC	0x17088
++			MX6UL_PAD_JTAG_TRST_B__SAI2_TX_DATA	0x11088
++			MX6UL_PAD_JTAG_TCK__SAI2_RX_DATA	0x11088
++			MX6UL_PAD_JTAG_TMS__SAI2_MCLK		0x17088
++			MX6UL_PAD_SNVS_TAMPER4__GPIO5_IO04	0x17059
++		>;
++	};
++
++	pinctrl_adc1: adc1grp {
++        	fsl,pins = <
++			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05           0x000000B0
++		>;
++	};
++
++	pinctrl_bnt0_key: btn0grp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15          0x000010B0
++		>;
++	};
++
++	pinctrl_csi1: csi1grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_MCLK__CSI_MCLK		0x1b088
++			MX6UL_PAD_CSI_PIXCLK__CSI_PIXCLK	0x1b088
++			MX6UL_PAD_CSI_VSYNC__CSI_VSYNC		0x1b088
++			MX6UL_PAD_CSI_HSYNC__CSI_HSYNC		0x1b088
++			MX6UL_PAD_CSI_DATA00__CSI_DATA02	0x1b088
++			MX6UL_PAD_CSI_DATA01__CSI_DATA03	0x1b088
++			MX6UL_PAD_CSI_DATA02__CSI_DATA04	0x1b088
++			MX6UL_PAD_CSI_DATA03__CSI_DATA05	0x1b088
++			MX6UL_PAD_CSI_DATA04__CSI_DATA06	0x1b088
++			MX6UL_PAD_CSI_DATA05__CSI_DATA07	0x1b088
++			MX6UL_PAD_CSI_DATA06__CSI_DATA08	0x1b088
++			MX6UL_PAD_CSI_DATA07__CSI_DATA09	0x1b088
++		>;
++	};
++
++	pinctrl_flexcan1: flexcan1grp{
++		fsl,pins = <
++			MX6UL_PAD_UART3_RTS_B__FLEXCAN1_RX	0x1b020
++			MX6UL_PAD_UART3_CTS_B__FLEXCAN1_TX	0x1b020
++		>;
++	};
++
++	pinctrl_flexcan2: flexcan2grp{
++		fsl,pins = <
++			MX6UL_PAD_UART2_RTS_B__FLEXCAN2_RX	0x1b020
++			MX6UL_PAD_UART2_CTS_B__FLEXCAN2_TX	0x1b020
++		>;
++	};
++
++	pinctrl_i2c1: i2c1grp {
++		fsl,pins = <
++			MX6UL_PAD_UART4_TX_DATA__I2C1_SCL 0x4001b8b0
++			MX6UL_PAD_UART4_RX_DATA__I2C1_SDA 0x4001b8b0
++		>;
++	};
++
++	pinctrl_i2c2: i2c2grp {
++		fsl,pins = <
++			MX6UL_PAD_UART5_TX_DATA__I2C2_SCL 0x4001b8b0
++			MX6UL_PAD_UART5_RX_DATA__I2C2_SDA 0x4001b8b0
++		>;
++	};
++
++	pinctrl_qspi: qspigrp {
++		fsl,pins = <
++			MX6UL_PAD_NAND_WP_B__QSPI_A_SCLK	0x70a1
++			MX6UL_PAD_NAND_READY_B__QSPI_A_DATA00	0x70a1
++			MX6UL_PAD_NAND_CE0_B__QSPI_A_DATA01	0x70a1
++			MX6UL_PAD_NAND_CE1_B__QSPI_A_DATA02	0x70a1
++			MX6UL_PAD_NAND_CLE__QSPI_A_DATA03	0x70a1
++			MX6UL_PAD_NAND_DQS__QSPI_A_SS0_B	0x70a1
++		>;
++	};
++
++
++	pinctrl_sim2: sim2grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_DATA03__SIM2_PORT1_PD		0xb808
++			MX6UL_PAD_CSI_DATA04__SIM2_PORT1_CLK		0x31
++			MX6UL_PAD_CSI_DATA05__SIM2_PORT1_RST_B		0xb808
++			MX6UL_PAD_CSI_DATA06__SIM2_PORT1_SVEN		0xb808
++			MX6UL_PAD_CSI_DATA07__SIM2_PORT1_TRXD		0xb809
++			MX6UL_PAD_CSI_DATA02__GPIO4_IO23		0x3008
++		>;
++	};
++
++	pinctrl_tsc: tscgrp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO01__GPIO1_IO01		0xb0
++			MX6UL_PAD_GPIO1_IO02__GPIO1_IO02		0xb0
++			MX6UL_PAD_GPIO1_IO03__GPIO1_IO03		0xb0
++			MX6UL_PAD_GPIO1_IO04__GPIO1_IO04		0xb0
++		>;
++	};
++
++	pinctrl_wdog: wdoggrp {
++		fsl,pins = <
++			MX6UL_PAD_LCD_RESET__WDOG1_WDOG_ANY    0x30b0
++		>;
++	};
++
++};
++
++&adc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_adc1>;
++	num-channels = <2>;
++	status = "okay";
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c1>;
++	status = "okay";
++
++	mag3110@e {
++		compatible = "fsl,mag3110";
++		reg = <0x0e>;
++	};
++};
++
++&i2c2 {
++	clock_frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c2>;
++	status = "okay";
++
++	codec: wm8960@1a {
++		#sound-dai-cells = <0>;
++		compatible = "wlf,wm8960";
++		reg = <0x1a>;
++		wlf,shared-lrclk;
++	};
++};
++
++
++
++&fec1 {
++	status = "disabled";
++};
++
++&fec2 {
++	status = "disabled";
++};
++
++&gpmi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
++	status = "okay";
++	nand-on-flash-bbt;
++};
++
++&pwm1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm1>;
++	status = "okay";
++};
++
++&pwm2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm2>;
++	status = "okay";
++};
++
++&pwm3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm3>;
++	status = "okay";
++};
++
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_qspi>;
++	status = "okay";
++
++	flash0: n25q256a@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "micron,n25q256a";
++		spi-max-frequency = <29000000>;
++		reg = <0>;
++	};
++};
++
++&sai1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai1>;
++	assigned-clocks = <&clks IMX6UL_CLK_SAI1_SEL>,
++			<&clks IMX6UL_CLK_SAI1>;
++	assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <0>, <12288000>;
++	fsl,sai-mclk-direction-output;
++	status = "okay";
++};
++
++&sai2 {
++	status = "disabled";
++};
++
++&snvs_poweroff {
++	status = "okay";
++};
++
++&tsc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_tsc>;
++	xnur-gpio = <&gpio1 3 GPIO_ACTIVE_LOW>;
++	measure-delay-time = <0xffff>;
++	pre-charge-time = <0xfff>;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1>;
++	status = "okay";
++};
++
++&uart2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart2>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
++&usbotg1 {
++	dr_mode = "otg";
++	status = "okay";
++};
++
++&usbotg2 {
++	dr_mode = "host";
++	disable-over-current;
++	status = "okay";
++};
++
++&usbphy1 {
++	fsl,tx-d-cal = <106>;
++};
++
++&usbphy2 {
++	fsl,tx-d-cal = <106>;
++};
++
++&usdhc1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	no-1-8-v;
++	non-removable;
++	pm-ignore-notify;
++	cap-power-off-card;
++	/delete-property/ wakeup-source;
++	/delete-property/ enable-sdio-wakeup;
++	status = "okay";
++};
++
++&usdhc2 {
++	status = "disabled";
++};
++
++&wdog1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wdog>;
++	fsl,ext-reset-output;
++};
