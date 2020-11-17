@@ -150,10 +150,8 @@ define Device/lumi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/dtb := install-dtb
 
-  DEVICE_DTS:= \
-	imx6ull-14x14-evk
-
-#	imx6ull-xiaomi-lumi
+  DEVICE_DTS := \
+	imx6ull-xiaomi-lumi
 endef
 TARGET_DEVICES += lumi
 
