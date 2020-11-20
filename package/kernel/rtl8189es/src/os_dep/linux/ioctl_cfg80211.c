@@ -3598,54 +3598,51 @@ static int cfg80211_rtw_flush_pmksa(struct wiphy *wiphy,
 #ifdef CONFIG_AP_MODE
 void rtw_cfg80211_indicate_sta_assoc(_adapter *padapter, u8 *pmgmt_frame, uint frame_len)
 {
-	s32 freq;
-	int channel;
-	struct wireless_dev *pwdev = padapter->rtw_wdev;
-	struct mlme_ext_priv *pmlmeext = &(padapter->mlmeextpriv);	
-	struct net_device *ndev = padapter->pnetdev;
+        s32 freq;
+        int channel;
+        struct wireless_dev *pwdev = padapter->rtw_wdev;
+        struct mlme_ext_priv *pmlmeext = &(padapter->mlmeextpriv);
+        struct net_device *ndev = padapter->pnetdev;
 
-	DBG_871X(FUNC_ADPT_FMT"\n", FUNC_ADPT_ARG(padapter));
+        DBG_8192C(FUNC_ADPT_FMT"\n", FUNC_ADPT_ARG(padapter));
 
 #if defined(RTW_USE_CFG80211_STA_EVENT) || defined(COMPAT_KERNEL_RELEASE)
-	{
-		struct station_info sinfo;
-		u8 ie_offset;
-		if (GetFrameSubType(pmgmt_frame) == WIFI_ASSOCREQ)
-			ie_offset = _ASOCREQ_IE_OFFSET_;
-		else // WIFI_REASSOCREQ
-			ie_offset = _REASOCREQ_IE_OFFSET_;
-	
-		sinfo.filled = 0;
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0))
-		sinfo.pertid = 0;
-		#endif
-// cf commit 319090bf6c75e3ad42a8c
-//		sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
-		sinfo.assoc_req_ies = pmgmt_frame + WLAN_HDR_A3_LEN + ie_offset;
-		sinfo.assoc_req_ies_len = frame_len - WLAN_HDR_A3_LEN - ie_offset;
-		cfg80211_new_sta(ndev, GetAddr2Ptr(pmgmt_frame), &sinfo, GFP_ATOMIC);
-	}
-#else /* defined(RTW_USE_CFG80211_STA_EVENT) */
-	channel = pmlmeext->cur_channel;
-	freq = rtw_ch2freq(channel);
+        {
+                struct station_info sinfo;
+                u8 ie_offset;
+                _rtw_memset(&sinfo, 0, sizeof(struct station_info));
+                if (GetFrameSubType(pmgmt_frame) == WIFI_ASSOCREQ)
+                        ie_offset = _ASOCREQ_IE_OFFSET_;
+                else /* WIFI_REASSOCREQ */
+                        ie_offset = _REASOCREQ_IE_OFFSET_;
 
-	#ifdef COMPAT_KERNEL_RELEASE
-	rtw_cfg80211_rx_mgmt(padapter, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
-	#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) && !defined(CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER)
-	rtw_cfg80211_rx_mgmt(padapter, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
-	#else //COMPAT_KERNEL_RELEASE
-	{
-		//to avoid WARN_ON(wdev->iftype != NL80211_IFTYPE_STATION)  when calling cfg80211_send_rx_assoc()
-		#ifndef CONFIG_PLATFORM_MSTAR
-		pwdev->iftype = NL80211_IFTYPE_STATION;
-		#endif //CONFIG_PLATFORM_MSTAR
-		DBG_8192C("iftype=%d before call cfg80211_send_rx_assoc()\n", pwdev->iftype);
-		rtw_cfg80211_send_rx_assoc(padapter, NULL, pmgmt_frame, frame_len);
-		DBG_8192C("iftype=%d after call cfg80211_send_rx_assoc()\n", pwdev->iftype);
-		pwdev->iftype = NL80211_IFTYPE_AP;
-		//cfg80211_rx_action(padapter->pnetdev, freq, pmgmt_frame, frame_len, GFP_ATOMIC);
-	}
-	#endif //COMPAT_KERNEL_RELEASE
+                memset(&sinfo, 0, sizeof(sinfo));
+                sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
+                sinfo.assoc_req_ies = pmgmt_frame + WLAN_HDR_A3_LEN + ie_offset;
+                sinfo.assoc_req_ies_len = frame_len - WLAN_HDR_A3_LEN - ie_offset;
+                cfg80211_new_sta(ndev, GetAddr2Ptr(pmgmt_frame), &sinfo, GFP_ATOMIC);
+        }
+#else /* defined(RTW_USE_CFG80211_STA_EVENT) */
+        channel = pmlmeext->cur_channel;
+        freq = rtw_ch2freq(channel);
+
+        #ifdef COMPAT_KERNEL_RELEASE
+        rtw_cfg80211_rx_mgmt(pwdev, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
+        #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) && !defined(CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER)
+        rtw_cfg80211_rx_mgmt(pwdev, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
+        #else /* COMPAT_KERNEL_RELEASE */
+        {
+                /* to avoid WARN_ON(wdev->iftype != NL80211_IFTYPE_STATION)  when calling cfg80211_send_rx_assoc() */
+                #ifndef CONFIG_PLATFORM_MSTAR
+                pwdev->iftype = NL80211_IFTYPE_STATION;
+                #endif /* CONFIG_PLATFORM_MSTAR */
+                DBG_8192C("iftype=%d before call cfg80211_send_rx_assoc()\n", pwdev->iftype);
+                rtw_cfg80211_send_rx_assoc(padapter, NULL, pmgmt_frame, frame_len);
+                DBG_8192C("iftype=%d after call cfg80211_send_rx_assoc()\n", pwdev->iftype);
+                pwdev->iftype = NL80211_IFTYPE_AP;
+                /* cfg80211_rx_action(padapter->pnetdev, freq, pmgmt_frame, frame_len, GFP_ATOMIC); */
+        }
+        #endif /* COMPAT_KERNEL_RELEASE */
 #endif /* defined(RTW_USE_CFG80211_STA_EVENT) */
 
 }
