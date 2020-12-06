@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lumi-8189es-wifi
-PKG_RELEASE=4.3.18.1
+PKG_RELEASE=5.3.3.1
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/lumi-8189es-wifi
   SUBMENU:=Lumi
-  TITLE:=Wireless Drivers for Xiaomi Lumi Gw Realtek rtl8189es and ...
+  TITLE:=Wireless Drivers for Xiaomi Lumi Gw Realtek rtl8189es wifi module
   DEPENDS:=+kmod-cfg80211 +@DRIVER_11N_SUPPORT
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8189es.ko
