@@ -18,11 +18,10 @@ EXTRA_CFLAGS += -Wno-unused
 
 EXTRA_CFLAGS += -I$(src)/include -I$(src)/hal -I$(src)/hal/phydm -I$(src)/hal/btc
 
-EXTRA_CFLAGS += -DRTW_P2P_GROUP_INTERFACE=1 -DRTW_DEDICATED_P2P_DEVICE=0
+#EXTRA_CFLAGS += -DRTW_P2P_GROUP_INTERFACE=1 -DRTW_DEDICATED_P2P_DEVICE=0
 #EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
 #EXTRA_CFLAGS += -DCONFIG_PLATFORM_ARM_SUN50IW1P1
 EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
-EXTRA_CFLAGS += -DCONFIG_RTL8188E
 #EXTRA_CFLAGS += -DCONFIG_RESUME_IN_WORKQUEUE
 #EXTRA_CFLAGS += -DCONFIG_PLATFORM_OPS
 
@@ -70,7 +69,7 @@ CONFIG_WIFI_TEST = n
 CONFIG_BT_COEXIST = n
 CONFIG_INTEL_WIDI = n
 CONFIG_WAPI_SUPPORT = n
-CONFIG_EFUSE_CONFIG_FILE = n
+CONFIG_EFUSE_CONFIG_FILE = y
 CONFIG_EXT_CLK = n
 CONFIG_TRAFFIC_PROTECT = y
 CONFIG_LOAD_PHY_PARA_FROM_FILE = y
@@ -97,7 +96,7 @@ CONFIG_RTW_WIFI_HAL = y
 CONFIG_RTW_DEBUG = y
 # default log level is _DRV_INFO_ = 4,
 # please refer to "How_to_set_driver_debug_log_level.doc" to set the available level.
-CONFIG_RTW_LOG_LEVEL = 4
+CONFIG_RTW_LOG_LEVEL = 2
 ######################## Wake On Lan ##########################
 CONFIG_WOWLAN = n
 CONFIG_WAKEUP_TYPE = 0x7 #bit2: deauth, bit1: unicast, bit0: magic pkt.
@@ -195,19 +194,20 @@ HCI_NAME = pci
 endif
 
 
-_OS_INTFS_FILES :=      os_dep/osdep_service.o \
-	                os_dep/linux/os_intfs.o \
-	                os_dep/linux/$(HCI_NAME)_intf.o \
-	                os_dep/linux/$(HCI_NAME)_ops_linux.o \
-	                os_dep/linux/ioctl_linux.o \
-	                os_dep/linux/xmit_linux.o \
-	                os_dep/linux/mlme_linux.o \
-	                os_dep/linux/recv_linux.o \
-	                os_dep/linux/ioctl_cfg80211.o \
-	                os_dep/linux/rtw_cfgvendor.o \
-	                os_dep/linux/wifi_regd.o \
-	                os_dep/linux/rtw_android.o \
-	                os_dep/linux/rtw_proc.o
+_OS_INTFS_FILES :=	os_dep/osdep_service.o \
+			os_dep/linux/os_intfs.o \
+			os_dep/linux/$(HCI_NAME)_intf.o \
+			os_dep/linux/$(HCI_NAME)_ops_linux.o \
+			os_dep/linux/ioctl_linux.o \
+			os_dep/linux/xmit_linux.o \
+			os_dep/linux/mlme_linux.o \
+			os_dep/linux/recv_linux.o \
+			os_dep/linux/ioctl_cfg80211.o \
+			os_dep/linux/rtw_cfgvendor.o \
+			os_dep/linux/wifi_regd.o \
+			os_dep/linux/rtw_android.o \
+			os_dep/linux/rtw_proc.o \
+			os_dep/linux/rtw_rhashtable.o
 
 ifeq ($(CONFIG_MP_INCLUDED), y)
 _OS_INTFS_FILES += os_dep/linux/ioctl_mp.o
@@ -224,35 +224,20 @@ _OS_INTFS_FILES += os_dep/linux/$(HCI_NAME)_ops_linux.o
 endif
 
 
-_HAL_INTFS_FILES :=     hal/hal_intf.o \
-	                hal/hal_com.o \
-	                hal/hal_com_phycfg.o \
-	                hal/hal_phy.o \
-	                hal/hal_dm.o \
-	                hal/hal_btcoex.o \
-	                hal/hal_mp.o \
-	                hal/hal_hci/hal_$(HCI_NAME).o \
-	                hal/led/hal_$(HCI_NAME)_led.o
+_HAL_INTFS_FILES :=	hal/hal_intf.o \
+			hal/hal_com.o \
+			hal/hal_com_phycfg.o \
+			hal/hal_phy.o \
+			hal/hal_dm.o \
+			hal/hal_dm_acs.o \
+			hal/hal_btcoex_wifionly.o \
+			hal/hal_btcoex.o \
+			hal/hal_mp.o \
+			hal/hal_mcc.o \
+			hal/hal_hci/hal_$(HCI_NAME).o \
+			hal/led/hal_led.o \
+			hal/led/hal_$(HCI_NAME)_led.o
 
-
-_OUTSRC_FILES := hal/phydm/phydm_debug.o        \
-	        hal/phydm/phydm_antdiv.o\
-	        hal/phydm/phydm_antdect.o\
-	        hal/phydm/phydm_interface.o\
-	        hal/phydm/phydm_hwconfig.o\
-	        hal/phydm/phydm.o\
-	        hal/phydm/halphyrf_ce.o\
-	        hal/phydm/phydm_edcaturbocheck.o\
-	        hal/phydm/phydm_dig.o\
-	        hal/phydm/phydm_pathdiv.o\
-	        hal/phydm/phydm_rainfo.o\
-	        hal/phydm/phydm_dynamicbbpowersaving.o\
-	        hal/phydm/phydm_powertracking_ce.o\
-	        hal/phydm/phydm_dynamictxpower.o\
-	        hal/phydm/phydm_adaptivity.o\
-	        hal/phydm/phydm_cfotracking.o\
-	        hal/phydm/phydm_noisemonitor.o\
-	        hal/phydm/phydm_acs.o
 
 EXTRA_CFLAGS += -I$(src)/platform
 _PLATFORM_FILES := platform/platform_ops.o
@@ -280,21 +265,23 @@ MODULE_NAME = 8188ee
 endif
 EXTRA_CFLAGS += -DCONFIG_RTL8188E
 
-_HAL_INTFS_FILES +=     hal/HalPwrSeqCmd.o \
-	                hal/$(RTL871X)/Hal8188EPwrSeq.o\
-	                hal/$(RTL871X)/$(RTL871X)_xmit.o\
-	                hal/$(RTL871X)/$(RTL871X)_sreset.o
+_HAL_INTFS_FILES +=	hal/HalPwrSeqCmd.o \
+					hal/$(RTL871X)/Hal8188EPwrSeq.o\
+ 					hal/$(RTL871X)/$(RTL871X)_xmit.o\
+					hal/$(RTL871X)/$(RTL871X)_sreset.o
 
-_HAL_INTFS_FILES +=     hal/$(RTL871X)/$(RTL871X)_hal_init.o \
-	                hal/$(RTL871X)/$(RTL871X)_phycfg.o \
-	                hal/$(RTL871X)/$(RTL871X)_rf6052.o \
-	                hal/$(RTL871X)/$(RTL871X)_dm.o \
-	                hal/$(RTL871X)/$(RTL871X)_rxdesc.o \
-	                hal/$(RTL871X)/$(RTL871X)_cmd.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_halinit.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_led.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
+_HAL_INTFS_FILES +=	hal/$(RTL871X)/$(RTL871X)_hal_init.o \
+			hal/$(RTL871X)/$(RTL871X)_phycfg.o \
+			hal/$(RTL871X)/$(RTL871X)_rf6052.o \
+			hal/$(RTL871X)/$(RTL871X)_dm.o \
+			hal/$(RTL871X)/$(RTL871X)_rxdesc.o \
+			hal/$(RTL871X)/$(RTL871X)_cmd.o \
+			hal/$(RTL871X)/hal8188e_s_fw.o \
+			hal/$(RTL871X)/hal8188e_t_fw.o \
+			hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_halinit.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_led.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
 
 ifeq ($(CONFIG_SDIO_HCI), y)
 _HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops.o
@@ -315,17 +302,6 @@ endif
 ifeq ($(CONFIG_SDIO_HCI), y)
 _HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8188E_SDIO.o
 endif
-
-#hal/OUTSRC/$(RTL871X)/Hal8188EFWImg_CE.o
-_OUTSRC_FILES += hal/phydm/$(RTL871X)/halhwimg8188e_mac.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_bb.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_rf.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_t_fw.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_s_fw.o\
-	        hal/phydm/$(RTL871X)/halphyrf_8188e_ce.o\
-	        hal/phydm/$(RTL871X)/phydm_regconfig8188e.o\
-	        hal/phydm/$(RTL871X)/hal8188erateadaptive.o\
-	        hal/phydm/$(RTL871X)/phydm_rtl8188e.o
 
 endif
 
@@ -345,21 +321,22 @@ ifeq ($(CONFIG_PCI_HCI), y)
 MODULE_NAME = 8192ee
 endif
 EXTRA_CFLAGS += -DCONFIG_RTL8192E
-_HAL_INTFS_FILES +=     hal/HalPwrSeqCmd.o \
-	                                hal/$(RTL871X)/Hal8188EPwrSeq.o\
-	                                hal/$(RTL871X)/$(RTL871X)_xmit.o\
-	                                hal/$(RTL871X)/$(RTL871X)_sreset.o
+_HAL_INTFS_FILES += hal/HalPwrSeqCmd.o \
+					hal/$(RTL871X)/Hal8192EPwrSeq.o\
+					hal/$(RTL871X)/$(RTL871X)_xmit.o\
+					hal/$(RTL871X)/$(RTL871X)_sreset.o
 
-_HAL_INTFS_FILES +=     hal/$(RTL871X)/$(RTL871X)_hal_init.o \
-	                hal/$(RTL871X)/$(RTL871X)_phycfg.o \
-	                hal/$(RTL871X)/$(RTL871X)_rf6052.o \
-	                hal/$(RTL871X)/$(RTL871X)_dm.o \
-	                hal/$(RTL871X)/$(RTL871X)_rxdesc.o \
-	                hal/$(RTL871X)/$(RTL871X)_cmd.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_halinit.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_led.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
-	                hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
+_HAL_INTFS_FILES +=	hal/$(RTL871X)/$(RTL871X)_hal_init.o \
+			hal/$(RTL871X)/$(RTL871X)_phycfg.o \
+			hal/$(RTL871X)/$(RTL871X)_rf6052.o \
+			hal/$(RTL871X)/$(RTL871X)_dm.o \
+			hal/$(RTL871X)/$(RTL871X)_rxdesc.o \
+			hal/$(RTL871X)/$(RTL871X)_cmd.o \
+			hal/$(RTL871X)/hal8192e_fw.o \
+			hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_halinit.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_led.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
 
 ifeq ($(CONFIG_SDIO_HCI), y)
 _HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops.o
@@ -371,27 +348,20 @@ _HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops_linux.o
 endif
 endif
 
-
 ifeq ($(CONFIG_USB_HCI), y)
-_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8188E_USB.o
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8192E_USB.o
 endif
 ifeq ($(CONFIG_PCI_HCI), y)
-_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8188E_PCIE.o
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8192E_PCIE.o
 endif
 ifeq ($(CONFIG_SDIO_HCI), y)
-_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8188E_SDIO.o
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8192E_SDIO.o
 endif
 
-#hal/OUTSRC/$(RTL871X)/Hal8188EFWImg_CE.o
-_OUTSRC_FILES += hal/phydm/$(RTL871X)/halhwimg8188e_mac.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_bb.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_rf.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_t_fw.o\
-	        hal/phydm/$(RTL871X)/halhwimg8188e_s_fw.o\
-	        hal/phydm/$(RTL871X)/halphyrf_8188e_ce.o\
-	        hal/phydm/$(RTL871X)/phydm_regconfig8188e.o\
-	        hal/phydm/$(RTL871X)/hal8188erateadaptive.o\
-	        hal/phydm/$(RTL871X)/phydm_rtl8188e.o
+ifeq ($(CONFIG_BT_COEXIST), y)
+_BTC_FILES += hal/btc/halbtc8192e1ant.o \
+				hal/btc/halbtc8192e2ant.o
+endif
 
 endif
 
@@ -1982,7 +1952,7 @@ endif
 #ifneq ($(KERNELRELEASE),)
 
 ########### this part for *.mk ############################
-#include $(src)/hal/phydm/phydm.mk
+include $(src)/hal/phydm/phydm.mk
 
 ########### HAL_RTL8822B #################################
 ifeq ($(CONFIG_RTL8822B), y)
@@ -1994,52 +1964,61 @@ ifeq ($(CONFIG_RTL8821C), y)
 include $(src)/rtl8821c.mk
 endif
 
-rtk_core :=     core/rtw_cmd.o \
-	        core/rtw_security.o \
-	        core/rtw_debug.o \
-	        core/rtw_io.o \
-	        core/rtw_ioctl_query.o \
-	        core/rtw_ioctl_set.o \
-	        core/rtw_ieee80211.o \
-	        core/rtw_mlme.o \
-	        core/rtw_mlme_ext.o \
-	        core/rtw_wlan_util.o \
-	        core/rtw_vht.o \
-	        core/rtw_pwrctrl.o \
-	        core/rtw_rf.o \
-	        core/rtw_recv.o \
-	        core/rtw_sta_mgt.o \
-	        core/rtw_ap.o \
-	        core/rtw_xmit.o \
-	        core/rtw_p2p.o \
-	        core/rtw_tdls.o \
-	        core/rtw_br_ext.o \
-	        core/rtw_iol.o \
-	        core/rtw_sreset.o \
-	        core/rtw_btcoex.o \
-	        core/rtw_beamforming.o \
-	        core/rtw_odm.o \
-	        core/efuse/rtw_efuse.o
+rtk_core :=	core/rtw_cmd.o \
+		core/rtw_security.o \
+		core/rtw_debug.o \
+		core/rtw_io.o \
+		core/rtw_ioctl_query.o \
+		core/rtw_ioctl_set.o \
+		core/rtw_ieee80211.o \
+		core/rtw_mlme.o \
+		core/rtw_mlme_ext.o \
+		core/rtw_mi.o \
+		core/rtw_wlan_util.o \
+		core/rtw_vht.o \
+		core/rtw_pwrctrl.o \
+		core/rtw_rf.o \
+		core/rtw_recv.o \
+		core/rtw_sta_mgt.o \
+		core/rtw_ap.o \
+		core/mesh/rtw_mesh.o \
+		core/mesh/rtw_mesh_pathtbl.o \
+		core/mesh/rtw_mesh_hwmp.o \
+		core/rtw_xmit.o	\
+		core/rtw_p2p.o \
+		core/rtw_rson.o \
+		core/rtw_tdls.o \
+		core/rtw_br_ext.o \
+		core/rtw_iol.o \
+		core/rtw_sreset.o \
+		core/rtw_btcoex_wifionly.o \
+		core/rtw_btcoex.o \
+		core/rtw_beamforming.o \
+		core/rtw_odm.o \
+		core/rtw_rm.o \
+		core/rtw_rm_fsm.o \
+		core/efuse/rtw_efuse.o 
+
+ifeq ($(CONFIG_SDIO_HCI), y)
+rtk_core += core/rtw_sdio.o
+endif
 
 rtl$(MODULE_NAME)-y += $(rtk_core)
 
 rtl$(MODULE_NAME)-$(CONFIG_INTEL_WIDI) += core/rtw_intel_widi.o
 
-rtl$(MODULE_NAME)-$(CONFIG_WAPI_SUPPORT) += core/rtw_wapi.o       \
-	                                core/rtw_wapi_sms4.o
+rtl$(MODULE_NAME)-$(CONFIG_WAPI_SUPPORT) += core/rtw_wapi.o	\
+					core/rtw_wapi_sms4.o
 
 rtl$(MODULE_NAME)-y += $(_OS_INTFS_FILES)
 rtl$(MODULE_NAME)-y += $(_HAL_INTFS_FILES)
-rtl$(MODULE_NAME)-y += $(_OUTSRC_FILES)
+rtl$(MODULE_NAME)-y += $(_PHYDM_FILES)
+rtl$(MODULE_NAME)-y += $(_BTC_FILES)
 rtl$(MODULE_NAME)-y += $(_PLATFORM_FILES)
 
-rtl$(MODULE_NAME)-$(CONFIG_MP_INCLUDED) += core/rtw_mp.o \
-	                                core/rtw_mp_ioctl.o
+rtl$(MODULE_NAME)-$(CONFIG_MP_INCLUDED) += core/rtw_mp.o
 
-ifeq ($(CONFIG_RTL8189E), y)
-rtl$(MODULE_NAME)-$(CONFIG_MP_INCLUDED)+= core/rtw_bt_mp.o
-endif
-ifeq ($(CONFIG_RTL8821A), y)
+ifeq ($(CONFIG_RTL8723B), y)
 rtl$(MODULE_NAME)-$(CONFIG_MP_INCLUDED)+= core/rtw_bt_mp.o
 endif
 
