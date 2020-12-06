@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/lumi-8723bs-wifi
   SUBMENU:=Lumi
-  TITLE:=Wireless Drivers for Xiaomi Lumi Gw Realtek rtl8723bs and ...
+  TITLE:=Wireless Drivers for Xiaomi Lumi Gw Realtek rtl8723bs wifi module
   DEPENDS:=+kmod-cfg80211 +@DRIVER_11N_SUPPORT
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8723bs.ko
