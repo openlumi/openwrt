@@ -63,10 +63,36 @@ cat << "EOF" > /usr/bin/reset_wifi_config
 EOF
 chmod +x /usr/bin/reset_wifi_config
 
+cat << "EOF" > /usr/bin/reset_overlay
+#!/bin/sh
+{
+    firstboot -y
+    for i in 1 2 3
+    do
+        echo 70 > /sys/class/backlight/lumi_r/brightness
+        echo 0 > /sys/class/backlight/lumi_g/brightness
+        echo 0 > /sys/class/backlight/lumi_b/brightness
+        sleep 1
+        echo 0 > /sys/class/backlight/lumi_r/brightness
+        echo 0 > /sys/class/backlight/lumi_g/brightness
+        echo 0 > /sys/class/backlight/lumi_b/brightness
+        sleep 1
+    done
+    reboot
+}
+EOF
+chmod +x /usr/bin/reset_overlay
+
 uci add system button
 uci set system.@button[-1].button="BTN_0"
 uci set system.@button[-1].action="released"
 uci set system.@button[-1].min="8"
-uci set system.@button[-1].max="20"
+uci set system.@button[-1].max="14"
 uci set system.@button[-1].handler="/usr/bin/reset_wifi_config"
+uci add system button
+uci set system.@button[-1].button="BTN_0"
+uci set system.@button[-1].action="released"
+uci set system.@button[-1].min="16"
+uci set system.@button[-1].max="25"
+uci set system.@button[-1].handler="/usr/bin/reset_overlay"
 uci commit system 
