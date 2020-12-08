@@ -145,9 +145,10 @@ define Device/lumi
   KERNEL_NAME := zImage
   KERNEL_SUFFIX := -zImage
   KERNEL := kernel-bin
-  IMAGES := sysupgrade.bin dtb
-  IMAGE/ubinized.bin := append-ubi
+  IMAGES := sysupgrade.bin dtb rootfs.bin
+  IMAGE_SIZE := 32768k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/rootfs.bin := append-rootfs
   IMAGE/dtb := install-dtb
 
   DEVICE_DTS := \
