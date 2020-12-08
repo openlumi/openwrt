@@ -285,3 +285,123 @@ diff -ruN a/sound/soc/codecs/tfa9882.c b/sound/soc/codecs/tfa9882.c
 +MODULE_AUTHOR("-=Alx=- <alx.v.sadkov@gmail.com>");
 +MODULE_ALIAS("platform:tfa9882-codec");
 +MODULE_LICENSE("GPL");
+diff -ruN a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+--- a/sound/soc/fsl/fsl_sai.c	2020-11-30 18:42:34.305368600 +0300
++++ b/sound/soc/fsl/fsl_sai.c	2020-11-30 20:02:29.527059700 +0300
+@@ -401,6 +401,15 @@
+ 
+ 	return 0;
+ }
++static int fsl_sai_set_dai_bclk_ratio(struct snd_soc_dai *dai,
++				      unsigned int ratio)
++{
++	struct fsl_sai *sai = snd_soc_dai_get_drvdata(dai);
++
++	sai->bclk_ratio = ratio;
++
++	return 0;
++}
+ 
+ static int fsl_sai_hw_params(struct snd_pcm_substream *substream,
+ 		struct snd_pcm_hw_params *params,
+@@ -422,8 +431,14 @@
+ 		slot_width = sai->slot_width;
+ 
+ 	if (!sai->is_slave_mode) {
+-		ret = fsl_sai_set_bclk(cpu_dai, tx,
+-				slots * slot_width * params_rate(params));
++		if (sai->bclk_ratio)
++			ret = fsl_sai_set_bclk(cpu_dai, tx,
++					       sai->bclk_ratio *
++					       params_rate(params));
++		else
++			ret = fsl_sai_set_bclk(cpu_dai, tx,
++					       slots * slot_width *
++					       params_rate(params));
+ 		if (ret)
+ 			return ret;
+ 
+@@ -512,6 +527,8 @@
+ 	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
+ 	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
+ 	u32 xcsr, count = 100;
++	unsigned int channels = substream->runtime->channels;
++	int i;
+ 
+ 	/*
+ 	 * Asynchronous mode: Clear SYNC for both Tx and Rx.
+@@ -531,6 +548,11 @@
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		for (i = 0; tx && i < channels; i++)
++			regmap_write(sai->regmap, FSL_SAI_TDR, 0x0);
++		if (tx)
++			udelay(10);
++
+ 		regmap_update_bits(sai->regmap, FSL_SAI_xCSR(tx),
+ 				   FSL_SAI_CSR_FRDE, FSL_SAI_CSR_FRDE);
+ 
+@@ -631,6 +653,7 @@
+ }
+ 
+ static const struct snd_soc_dai_ops fsl_sai_pcm_dai_ops = {
++	.set_bclk_ratio = fsl_sai_set_dai_bclk_ratio,
+ 	.set_sysclk	= fsl_sai_set_dai_sysclk,
+ 	.set_fmt	= fsl_sai_set_dai_fmt,
+ 	.set_tdm_slot	= fsl_sai_set_dai_tdm_slot,
+@@ -653,7 +676,7 @@
+ 	regmap_write(sai->regmap, FSL_SAI_RCSR, 0);
+ 
+ 	regmap_update_bits(sai->regmap, FSL_SAI_TCR1, FSL_SAI_CR1_RFW_MASK,
+-			   FSL_SAI_MAXBURST_TX * 2);
++			   FSL_SAI_FIFO_DEPTH - FSL_SAI_MAXBURST_TX);
+ 	regmap_update_bits(sai->regmap, FSL_SAI_RCR1, FSL_SAI_CR1_RFW_MASK,
+ 			   FSL_SAI_MAXBURST_RX - 1);
+ 
+@@ -776,6 +799,7 @@
+ 	.reg_bits = 32,
+ 	.reg_stride = 4,
+ 	.val_bits = 32,
++	.fast_io = true,
+ 
+ 	.max_register = FSL_SAI_RMR,
+ 	.reg_defaults = fsl_sai_reg_defaults,
+@@ -912,10 +936,13 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	if (sai->sai_on_imx)
+-		return imx_pcm_dma_init(pdev, IMX_SAI_DMABUF_SIZE);
+-	else
+-		return devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	if (sai->sai_on_imx) {
++		ret = imx_pcm_dma_init(pdev, IMX_SAI_DMABUF_SIZE);
++	}else {
++		ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	}
++
++	return ret;
+ }
+ 
+ static const struct of_device_id fsl_sai_ids[] = {
+diff -ruN a/sound/soc/fsl/fsl_sai.h b/sound/soc/fsl/fsl_sai.h
+--- a/sound/soc/fsl/fsl_sai.h	2020-11-30 18:42:34.305368600 +0300
++++ b/sound/soc/fsl/fsl_sai.h	2020-11-30 20:02:29.527059700 +0300
+@@ -128,7 +128,7 @@
+ /* SAI data transfer numbers per DMA request */
+ #define FSL_SAI_MAXBURST_TX 6
+ #define FSL_SAI_MAXBURST_RX 6
+-
++#define FSL_SAI_FIFO_DEPTH 32
+ struct fsl_sai {
+ 	struct platform_device *pdev;
+ 	struct regmap *regmap;
+@@ -145,6 +145,7 @@
+ 	unsigned int mclk_streams;
+ 	unsigned int slots;
+ 	unsigned int slot_width;
++	unsigned int bclk_ratio;
+ 
+ 	struct snd_dmaengine_dai_dma_data dma_params_rx;
+ 	struct snd_dmaengine_dai_dma_data dma_params_tx;
