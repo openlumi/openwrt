@@ -50,9 +50,9 @@ then
   echo Flash $1
   if [ $2 ]
   then
-    iot_jp -s /dev/ttymxc1 -f $1 -v -V 2 $2
+    jnflasher -s /dev/ttymxc1 -f $1 -v -V 2 $2
   else
-    iot_jp -s /dev/ttymxc1 -f $1 -v -V 2
+    jnflasher -s /dev/ttymxc1 -f $1 -v -V 2
   fi
   result=$?
 fi
