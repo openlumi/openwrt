@@ -113,6 +113,16 @@ define Build/apalis-emmc
 	$(Build/imx6-combined-image-clean)
 endef
 
+define Build/lumi-fullupgrade-tar
+	sh ./sysupgrade-tar.sh \
+		--board $(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
+		--kernel $(call param_get_default,kernel,$(1),$(IMAGE_KERNEL)) \
+		--rootfs $(call param_get_default,rootfs,$(1),$(IMAGE_ROOTFS)) \
+		--dtb $(DTS_DIR)/$(firstword $(DEVICE_DTS)).dtb \
+		$@
+endef
+
+
 #################################################
 # Devices
 #################################################
@@ -145,9 +155,10 @@ define Device/lumi
   KERNEL_NAME := zImage
   KERNEL_SUFFIX := -zImage
   KERNEL := kernel-bin
-  IMAGES := sysupgrade.bin dtb rootfs.bin
+  IMAGES := sysupgrade.bin dtb rootfs.bin devupgrade.tar
   IMAGE_SIZE := 32768k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/devupgrade.tar := lumi-fullupgrade-tar
   IMAGE/rootfs.bin := append-rootfs
   IMAGE/dtb := install-dtb
 
