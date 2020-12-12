@@ -75,7 +75,7 @@ CONFIG_CLKSRC_IMX_GPT=y
 CONFIG_CLKSRC_MMIO=y
 CONFIG_CLONE_BACKWARDS=y
 CONFIG_CLZ_TAB=y
-CONFIG_CMDLINE="console=ttymxc0,115200 ubi.mtd=3 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs cma=64M mtdparts=gpmi-nand:3m(boot),7m(kernel),1m(dtb),-(ubi_rootfs)"
+CONFIG_CMDLINE="console=ttymxc0,115200 ubi.mtd=3 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs cma=64M mtdparts=gpmi-nand:3m(boot),7m(kernel),1m(dtb),-(ubi)"
 CONFIG_CMDLINE_FORCE=y
 CONFIG_COMMON_CLK=y
 CONFIG_CPUFREQ_DT=y
