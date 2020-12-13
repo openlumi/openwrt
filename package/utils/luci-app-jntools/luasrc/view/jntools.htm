@@ -1,0 +1,143 @@
+<%#
+ Copyright 2020 Ivan Belokobylskiy <belokobylskij@gmail.com>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<style type="text/css">
+	.controls {
+		display: flex;
+		margin: .5em 0 1em 0;
+		flex-wrap: wrap;
+		justify-content: space-around;
+	}
+
+	.controls > * {
+		padding: .25em;
+		white-space: nowrap;
+		flex: 1 1 33%;
+		box-sizing: border-box;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.controls > *:first-child,
+	.controls > * > label {
+		flex-basis: 100%;
+		min-width: 250px;
+	}
+
+	.controls > *:nth-child(2),
+	.controls > *:nth-child(3) {
+		flex-basis: 20%;
+	}
+
+	.controls > * > .btn {
+		flex-basis: 20px;
+		text-align: center;
+	}
+
+	.controls > * > * {
+		flex-grow: 1;
+		align-self: center;
+	}
+
+	.controls > div > input {
+		width: auto;
+	}
+
+	.td.version,
+	.td.size {
+		white-space: nowrap;
+	}
+
+	ul.deps, ul.deps ul, ul.errors {
+		margin-left: 1em;
+	}
+
+	ul.deps li, ul.errors li {
+		list-style: none;
+	}
+
+	ul.deps li:before {
+		content: "↳";
+		display: inline-block;
+		width: 1em;
+		margin-left: -1em;
+	}
+
+	ul.deps li > span {
+		white-space: nowrap;
+	}
+
+	ul.errors li {
+		color: #c44;
+		font-size: 90%;
+		font-weight: bold;
+		padding-left: 1.5em;
+	}
+
+	ul.errors li:before {
+		content: "⚠";
+		display: inline-block;
+		width: 1.5em;
+		margin-left: -1.5em;
+	}
+</style>
+
+<h2><%:JN51XX Zigbee utility%></h2>
+
+<div class="controls">
+	<div>
+		<label><%:Download and install firmware%>:</label>
+		<input type="text" name="install" placeholder="<%:Firmware URL…%>" onkeydown="if (event.keyCode === 13) handleFlashUrl(event)" /><!--
+		--><button class="btn cbi-button cbi-button-action" onclick="handleFlashUrl(event)"><%:OK%></button>
+	</div>
+
+	<div>
+		<label><%:Write firmware%>:</label>
+		<button class="btn cbi-button-negative" onclick="handleUpload(event)"><%:Upload Firmware…%></button>
+	</div>
+</div>
+<div class="cbi-section-node">
+        <div class="cbi-section-node">
+                <div class="cbi-value">
+                        <label class="cbi-value-title"><%:Baudrate to run commands%></label>
+                        <div class="cbi-value-field">
+                        <select class="cbi-input-select" name="baudrate" id="baudrate">
+                                <option value="115200"><%:115200%></option>
+                                <option value="1000000"><%:1000000%></option>
+                        </select>
+                        </div>
+                </div>
+        </div>
+        <div class="cbi-section-node">
+                <div class="cbi-value">
+                        <label class="cbi-value-title"><%:Clear persistent data manager%></label>
+                        <div class="cbi-value-field">
+			<button class="cbi-button cbi-button-negative" data-command="erase_pdm" onclick="handleErasePdm(event)"><%:Erase PDM%></button>
+                        </div>
+                </div>
+        </div>
+        <div class="cbi-section-node">
+                <div class="cbi-value">
+                        <label class="cbi-value-title"><%:Soft restart zigbee chip%></label>
+                        <div class="cbi-value-field">
+			<button class="cbi-button cbi-button-action" data-command="soft_reset" onclick="handleExec(event)"><%:Soft reset%></button>
+                        </div>
+                </div>
+        </div>
+        <div class="cbi-section-node">
+                <div class="cbi-value">
+                        <label class="cbi-value-title"><%:Switch to router mode%></label>
+                        <div class="cbi-value-field">
+			<button class="cbi-button cbi-button-action" data-command="router_mode" onclick="handleExec(event)"><%:Set router mode%></button>
+                        </div>
+                </div>
+        </div>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/view/jntools.js"></script>
+
+<%+footer%>
