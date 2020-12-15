@@ -4,7 +4,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=jnflasher
+PKG_NAME:=jntools
 PKG_VERSION:=0.11
 PKG_RELEASE:=1
 
@@ -17,14 +17,15 @@ LDFLAGS =
 include $(INCLUDE_DIR)/package.mk
 
 
-define Package/jnflasher
+define Package/jntools
 	SECTION:=utils
 	CATEGORY:=Utilities
-	TITLE:=jnflasher
+	TITLE:=jntools
+	DEPENDS:=+memtool
 endef
 
-define Package/jnflasher/description
-	jnflasher - a tool to flash jn5169 zigbee chip
+define Package/jntools/description
+	jntools - a set of tools to flash and manage jn5169 zigbee chip
 endef
 
 define Build/Prepare
@@ -40,10 +41,12 @@ define Build/Compile
 	        LDFLAGS="$(TARGET_LDFLAGS)"
 endef
 
-define Package/jnflasher/install
+define Package/jntools/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/jennicProgrammer/iot_jp $(1)/usr/bin/
-	$(LN) iot_jp $(1)/usr/bin/jnflasher
+	$(LN) iot_jp $(1)/usr/bin/jnprogrammer
+	$(INSTALL_BIN) ./files/jnflash $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/jntool $(1)/usr/bin/
 endef
 
-$(eval $(call BuildPackage,jnflasher))
+$(eval $(call BuildPackage,jntools))

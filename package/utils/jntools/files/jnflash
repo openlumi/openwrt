@@ -1,7 +1,9 @@
 #!/bin/sh
 
-memtool 20E00E4=15 > /tmp/NULL
-memtool 20E00E8=15 > /tmp/NULL
+PORT="${PORT:-/dev/ttymxc1}"
+
+memtool 20E00E4=15 > /dev/null
+memtool 20E00E8=15 > /dev/null
 
 
 if [ $# != 1 ] && [ $# != 2 ]
@@ -50,9 +52,9 @@ then
   echo Flash $1
   if [ $2 ]
   then
-    jnflasher -s /dev/ttymxc1 -f $1 -v -V 2 $2
+    jnprogrammer -s $PORT -f $1 -v -V 2 $2
   else
-    jnflasher -s /dev/ttymxc1 -f $1 -v -V 2
+    jnprogrammer -s $PORT -f $1 -v -V 2
   fi
   result=$?
 fi
@@ -68,5 +70,3 @@ echo 1 > /sys/class/gpio/gpio$RESET_PIN_MK/value
 sleep 1
 
 exit 0
-
-
