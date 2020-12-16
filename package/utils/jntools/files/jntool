@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PORT="${PORT:-/dev/ttymxc1}"
-BAUD="${BAUD:-115200}"
+BAUDRATE="${BAUDRATE:-115200}"
 
 if [[ $# -lt 1 ]]; then
     echo -e "Usage:\n\t$0 <command>"
@@ -33,11 +33,11 @@ router_mode() {
     printf '\x01\x02\x10\x25\x02\x10\x02\x10\x25\x03' > $PORT
 }
 
-original_settings="$(stty -g)"
-stty -F "$PORT" $BAUD
+original_settings="$(stty -g -F $PORT)"
+stty -F "$PORT" raw $BAUDRATE
 
 # Kill background process and restore terminal when this shell exits
-trap 'set +e; kill "$bgPid"; stty "$original_settings"' EXIT
+trap 'set +e; kill "$bgPid"; stty "$original_settings" -F $PORT' EXIT
 hexdump -v -C $PORT & bgPid=$!
 
 case "$1" in
