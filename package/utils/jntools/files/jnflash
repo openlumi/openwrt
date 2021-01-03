@@ -52,9 +52,9 @@ then
   echo Flash $1
   if [ $2 ]
   then
-    jnprogrammer -s $PORT -f $1 -v -V 2 $2
+    jnprogrammer -s $PORT -f $1 -V 2 $2
   else
-    jnprogrammer -s $PORT -f $1 -v -V 2
+    jnprogrammer -s $PORT -f $1 -V 2
   fi
   result=$?
 fi
