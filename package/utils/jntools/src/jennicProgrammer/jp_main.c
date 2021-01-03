@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 {
     tsPRG_Context   sPRG_Context;
     int ret = 0;
-    int iVerify = 1;
+    int iVerify = 0;
 
     printf("JennicModuleProgrammer Version: %s\n", pcPRG_Version);
     
