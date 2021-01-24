@@ -40,6 +40,8 @@ stty -F "$PORT" raw $BAUDRATE
 trap 'set +e; kill "$bgPid"; stty "$original_settings" -F $PORT' EXIT
 hexdump -v -C $PORT & bgPid=$!
 
+sleep 1
+
 case "$1" in
     "soft_reset")
         soft_reset
