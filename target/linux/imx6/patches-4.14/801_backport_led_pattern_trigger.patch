@@ -1,0 +1,485 @@
+From: Alexey Sadkov <alx.v.sadkov@gmail.com>
+Date: Sun, 25 Jan 2021 2:17:17 +0300
+Subject: Backport led pattern trigger from linux 5.4.
+
+diff -ruN a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
+--- a/drivers/leds/trigger/Kconfig	2020-12-15 06:56:03 +0300
++++ b/drivers/leds/trigger/Kconfig	2021-01-23 12:54:04 +0300
+@@ -133,4 +133,11 @@
+ 	  This allows LEDs to be controlled by network device activity.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_PATTERN
++	tristate "LED Pattern Trigger"
++	help
++	  This allows LEDs to be controlled by a software or hardware pattern
++	  which is a series of tuples, of brightness and duration (ms).
++	  If unsure, say N
++
+ endif # LEDS_TRIGGERS
+diff -ruN a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
+--- a/drivers/leds/trigger/Makefile	2020-12-15 06:56:03 +0300
++++ b/drivers/leds/trigger/Makefile	2021-01-23 12:53:03 +0300
+@@ -12,3 +12,4 @@
+ obj-$(CONFIG_LEDS_TRIGGER_CAMERA)	+= ledtrig-camera.o
+ obj-$(CONFIG_LEDS_TRIGGER_PANIC)	+= ledtrig-panic.o
+ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
++obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+\ No newline at end of file
+diff -ruN a/drivers/leds/trigger/ledtrig-pattern.c b/drivers/leds/trigger/ledtrig-pattern.c
+--- a/drivers/leds/trigger/ledtrig-pattern.c	1970-01-01 03:00:00 +0300
++++ b/drivers/leds/trigger/ledtrig-pattern.c	2021-01-25 02:13:49 +0300
+@@ -0,0 +1,406 @@
++// SPDX-License-Identifier: GPL-2.0
++
++/*
++ * LED pattern trigger
++ *
++ * Idea discussed with Pavel Machek. Raphael Teysseyre implemented
++ * the first version, Baolin Wang simplified and improved the approach.
++ */
++
++#include <linux/kernel.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/slab.h>
++#include <linux/timer.h>
++
++#define MAX_PATTERNS		1024
++/*
++ * When doing gradual dimming, the led brightness will be updated
++ * every 50 milliseconds.
++ */
++#define UPDATE_INTERVAL		50
++
++struct pattern_trig_data {
++	struct led_classdev *led_cdev;
++	struct led_pattern patterns[MAX_PATTERNS];
++	struct led_pattern *curr;
++	struct led_pattern *next;
++	struct mutex lock;
++	u32 npatterns;
++	int repeat;
++	int last_repeat;
++	int delta_t;
++	bool is_indefinite;
++	bool is_hw_pattern;
++	struct timer_list timer;
++};
++
++static void pattern_trig_update_patterns(struct pattern_trig_data *data)
++{
++	data->curr = data->next;
++	if (!data->is_indefinite && data->curr == data->patterns)
++		data->repeat--;
++
++	if (data->next == data->patterns + data->npatterns - 1)
++		data->next = data->patterns;
++	else
++		data->next++;
++
++	data->delta_t = 0;
++}
++
++static int pattern_trig_compute_brightness(struct pattern_trig_data *data)
++{
++	int step_brightness;
++
++	/*
++	 * If current tuple's duration is less than the dimming interval,
++	 * we should treat it as a step change of brightness instead of
++	 * doing gradual dimming.
++	 */
++	if (data->delta_t == 0 || data->curr->delta_t < UPDATE_INTERVAL)
++		return data->curr->brightness;
++
++	step_brightness = abs(data->next->brightness - data->curr->brightness);
++	step_brightness = data->delta_t * step_brightness / data->curr->delta_t;
++
++	if (data->next->brightness > data->curr->brightness)
++		return data->curr->brightness + step_brightness;
++	else
++		return data->curr->brightness - step_brightness;
++}
++
++static void pattern_trig_timer_function(struct timer_list *t)
++{
++	struct pattern_trig_data *data = from_timer(data, t, timer);
++
++	mutex_lock(&data->lock);
++
++	for (;;) {
++		if (!data->is_indefinite && !data->repeat)
++			break;
++
++		if (data->curr->brightness == data->next->brightness) {
++			/* Step change of brightness */
++			led_set_brightness(data->led_cdev,
++					   data->curr->brightness);
++			mod_timer(&data->timer,
++				  jiffies + msecs_to_jiffies(data->curr->delta_t));
++
++			/* Skip the tuple with zero duration */
++			pattern_trig_update_patterns(data);
++			/* Select next tuple */
++			pattern_trig_update_patterns(data);
++		} else {
++			/* Gradual dimming */
++
++			/*
++			 * If the accumulation time is larger than current
++			 * tuple's duration, we should go next one and re-check
++			 * if we repeated done.
++			 */
++			if (data->delta_t > data->curr->delta_t) {
++				pattern_trig_update_patterns(data);
++				continue;
++			}
++
++			led_set_brightness(data->led_cdev,
++					   pattern_trig_compute_brightness(data));
++			mod_timer(&data->timer,
++				  jiffies + msecs_to_jiffies(UPDATE_INTERVAL));
++
++			/* Accumulate the gradual dimming time */
++			data->delta_t += UPDATE_INTERVAL;
++		}
++
++		break;
++	}
++
++	mutex_unlock(&data->lock);
++}
++
++static int pattern_trig_start_pattern(struct led_classdev *led_cdev)
++{
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++
++	if (!data->npatterns)
++		return 0;
++
++	if (data->is_hw_pattern) {
++		return led_cdev->pattern_set(led_cdev, data->patterns,
++					     data->npatterns, data->repeat);
++	}
++
++	/* At least 2 tuples for software pattern. */
++	if (data->npatterns < 2)
++		return -EINVAL;
++
++	data->delta_t = 0;
++	data->curr = data->patterns;
++	data->next = data->patterns + 1;
++	data->timer.expires = jiffies;
++	add_timer(&data->timer);
++
++	return 0;
++}
++
++static ssize_t repeat_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++	int repeat;
++
++	mutex_lock(&data->lock);
++
++	repeat = data->last_repeat;
++
++	mutex_unlock(&data->lock);
++
++	return scnprintf(buf, PAGE_SIZE, "%d\n", repeat);
++}
++
++static ssize_t repeat_store(struct device *dev, struct device_attribute *attr,
++			    const char *buf, size_t count)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++	int err, res;
++
++	err = kstrtos32(buf, 10, &res);
++	if (err)
++		return err;
++
++	/* Number 0 and negative numbers except -1 are invalid. */
++	if (res < -1 || res == 0)
++		return -EINVAL;
++
++	/*
++	 * Clear previous patterns' performence firstly, and remove the timer
++	 * without mutex lock to avoid dead lock.
++	 */
++	del_timer_sync(&data->timer);
++
++	mutex_lock(&data->lock);
++
++	if (data->is_hw_pattern)
++		led_cdev->pattern_clear(led_cdev);
++
++	data->last_repeat = data->repeat = res;
++	/* -1 means repeat indefinitely */
++	if (data->repeat == -1)
++		data->is_indefinite = true;
++	else
++		data->is_indefinite = false;
++
++	err = pattern_trig_start_pattern(led_cdev);
++
++	mutex_unlock(&data->lock);
++	return err < 0 ? err : count;
++}
++
++//static DEVICE_ATTR_RW(repeat);
++static DEVICE_ATTR(repeat, 0644, repeat_show, repeat_store);
++static ssize_t pattern_trig_show_patterns(struct pattern_trig_data *data,
++					  char *buf, bool hw_pattern)
++{
++	ssize_t count = 0;
++	int i;
++
++	mutex_lock(&data->lock);
++
++	if (!data->npatterns || (data->is_hw_pattern ^ hw_pattern))
++		goto out;
++
++	for (i = 0; i < data->npatterns; i++) {
++		count += scnprintf(buf + count, PAGE_SIZE - count,
++				   "%d %u ",
++				   data->patterns[i].brightness,
++				   data->patterns[i].delta_t);
++	}
++
++	buf[count - 1] = '\n';
++
++out:
++	mutex_unlock(&data->lock);
++	return count;
++}
++
++static ssize_t pattern_trig_store_patterns(struct led_classdev *led_cdev,
++					   const char *buf, size_t count,
++					   bool hw_pattern)
++{
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++	int ccount, cr, offset = 0, err = 0;
++
++	/*
++	 * Clear previous patterns' performence firstly, and remove the timer
++	 * without mutex lock to avoid dead lock.
++	 */
++	del_timer_sync(&data->timer);
++
++	mutex_lock(&data->lock);
++
++	if (data->is_hw_pattern)
++		led_cdev->pattern_clear(led_cdev);
++
++	data->is_hw_pattern = hw_pattern;
++	data->npatterns = 0;
++
++	while (offset < count - 1 && data->npatterns < MAX_PATTERNS) {
++		cr = 0;
++		ccount = sscanf(buf + offset, "%d %u %n",
++				&data->patterns[data->npatterns].brightness,
++				&data->patterns[data->npatterns].delta_t, &cr);
++		if (ccount != 2) {
++			data->npatterns = 0;
++			err = -EINVAL;
++			goto out;
++		}
++
++		offset += cr;
++		data->npatterns++;
++	}
++
++	err = pattern_trig_start_pattern(led_cdev);
++	if (err)
++		data->npatterns = 0;
++
++out:
++	mutex_unlock(&data->lock);
++	return err < 0 ? err : count;
++}
++
++static ssize_t pattern_show(struct device *dev, struct device_attribute *attr,
++			    char *buf)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++
++	return pattern_trig_show_patterns(data, buf, false);
++}
++
++static ssize_t pattern_store(struct device *dev, struct device_attribute *attr,
++			     const char *buf, size_t count)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++
++	return pattern_trig_store_patterns(led_cdev, buf, count, false);
++}
++
++static DEVICE_ATTR(pattern, 0644, pattern_show, pattern_store);
++static ssize_t hw_pattern_show(struct device *dev,
++			       struct device_attribute *attr, char *buf)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++
++	return pattern_trig_show_patterns(data, buf, true);
++}
++
++static ssize_t hw_pattern_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t count)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++
++	return pattern_trig_store_patterns(led_cdev, buf, count, true);
++}
++
++static DEVICE_ATTR(hw_pattern, 0644, hw_pattern_show, hw_pattern_store);
++static umode_t pattern_trig_attrs_mode(struct kobject *kobj,
++				       struct attribute *attr, int index)
++{
++	struct device *dev = container_of(kobj, struct device, kobj);
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++
++	if (attr == &dev_attr_repeat.attr || attr == &dev_attr_pattern.attr)
++		return attr->mode;
++	else if (attr == &dev_attr_hw_pattern.attr && led_cdev->pattern_set)
++		return attr->mode;
++
++	return 0;
++}
++
++static void pattern_trig_activate(struct led_classdev *led_cdev)
++{
++	struct pattern_trig_data *data;
++	int ret;
++	data = kzalloc(sizeof(*data), GFP_KERNEL);
++	if (!data) {
++		dev_err(led_cdev->dev, "unable to allocate pattern trigger\n");
++		return;
++	}
++	ret = device_create_file(led_cdev->dev, &dev_attr_pattern);
++	if (ret)
++		goto err_files;
++	ret = device_create_file(led_cdev->dev, &dev_attr_hw_pattern);
++	if (ret)
++		goto err_files;
++	ret = device_create_file(led_cdev->dev, &dev_attr_repeat);
++	if (ret)
++		goto err_files;
++
++	if (!!led_cdev->pattern_set ^ !!led_cdev->pattern_clear) {
++		dev_warn(led_cdev->dev,
++			 "Hardware pattern ops validation failed\n");
++		led_cdev->pattern_set = NULL;
++		led_cdev->pattern_clear = NULL;
++	}
++
++	data->is_indefinite = true;
++	data->last_repeat = -1;
++	mutex_init(&data->lock);
++	data->led_cdev = led_cdev;
++	led_cdev->trigger_data = data;
++	timer_setup(&data->timer, pattern_trig_timer_function, 0);
++	led_cdev->activated = true;
++
++	return;
++
++err_files:
++	led_cdev->trigger_data = NULL;
++	kfree(data);
++}
++
++static void pattern_trig_deactivate(struct led_classdev *led_cdev)
++{
++	struct pattern_trig_data *data = led_cdev->trigger_data;
++
++	if (!led_cdev->activated)
++		return;
++
++	if (led_cdev->pattern_clear)
++		led_cdev->pattern_clear(led_cdev);
++
++	del_timer_sync(&data->timer);
++
++	led_set_brightness(led_cdev, LED_OFF);
++	kfree(data);
++	led_cdev->activated = false;
++}
++
++static struct led_trigger pattern_led_trigger = {
++	.name = "pattern",
++	.activate = pattern_trig_activate,
++	.deactivate = pattern_trig_deactivate,
++};
++
++static int __init pattern_trig_init(void)
++{
++	return led_trigger_register(&pattern_led_trigger);
++}
++
++static void __exit pattern_trig_exit(void)
++{
++	led_trigger_unregister(&pattern_led_trigger);
++}
++
++module_init(pattern_trig_init);
++module_exit(pattern_trig_exit);
++
++MODULE_AUTHOR("Raphael Teysseyre <rteysseyre@gmail.com");
++MODULE_AUTHOR("Baolin Wang <baolin.wang@linaro.org");
++MODULE_DESCRIPTION("LED Pattern trigger");
++MODULE_LICENSE("GPL v2");
+diff -ruN a/include/linux/leds.h b/include/linux/leds.h
+--- a/include/linux/leds.h	2020-11-24 15:05:58 +0300
++++ b/include/linux/leds.h	2021-01-25 02:14:43 +0300
+@@ -20,8 +20,8 @@
+ #include <linux/spinlock.h>
+ #include <linux/timer.h>
+ #include <linux/workqueue.h>
+-
+ struct device;
++struct led_pattern;
+ /*
+  * LED Core
+  */
+@@ -50,6 +50,7 @@
+ #define LED_PANIC_INDICATOR	(1 << 20)
+ #define LED_BRIGHT_HW_CHANGED	(1 << 21)
+ #define LED_RETAIN_AT_SHUTDOWN	(1 << 22)
++#define LED_INIT_DEFAULT_TRIGGER (1 << 23)
+ 
+ 	/* set_brightness_work / blink_timer flags, atomic, private. */
+ 	unsigned long		work_flags;
+@@ -88,6 +89,10 @@
+ 				     unsigned long *delay_on,
+ 				     unsigned long *delay_off);
+ 
++	int (*pattern_set)(struct led_classdev *led_cdev,
++			   struct led_pattern *pattern, u32 len, int repeat);
++	int (*pattern_clear)(struct led_classdev *led_cdev);
++
+ 	struct device		*dev;
+ 	const struct attribute_group	**groups;
+ 
+@@ -445,5 +450,14 @@
+ static inline void led_classdev_notify_brightness_hw_changed(
+ 	struct led_classdev *led_cdev, enum led_brightness brightness) { }
+ #endif
++/**
++ * struct led_pattern - pattern interval settings
++ * @delta_t: pattern interval delay, in milliseconds
++ * @brightness: pattern interval brightness
++ */
++struct led_pattern {
++	u32 delta_t;
++	int brightness;
++};
+ 
+ #endif		/* __LINUX_LEDS_H_INCLUDED */
