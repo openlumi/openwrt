@@ -1,0 +1,53 @@
+state.tfa9882audio {
+	control.1 {
+		iface MIXER
+		name AlertVol
+		value.0 82
+		value.1 82
+		comment {
+			access 'read write user'
+			type INTEGER
+			count 2
+			range '0 - 255'
+			tlv '0000000100000008ffffec1400000014'
+			dbmin -5100
+			dbmax 0
+			dbvalue.0 -3460
+			dbvalue.1 -3460
+		}
+	}
+	control.2 {
+		iface MIXER
+		name Master
+		value.0 39
+		value.1 39
+		comment {
+			access 'read write user'
+			type INTEGER
+			count 2
+			range '0 - 255'
+			tlv '0000000100000008ffffec1400000014'
+			dbmin -5100
+			dbmax 0
+			dbvalue.0 -4320
+			dbvalue.1 -4320
+		}
+	}
+	control.3 {
+		iface MIXER
+		name SnapVol
+		value.0 129
+		value.1 129
+		comment {
+			access 'read write user'
+			type INTEGER
+			count 2
+			range '0 - 255'
+			tlv '0000000100000008ffffec1400000014'
+			dbmin -5100
+			dbmax 0
+			dbvalue.0 -2520
+			dbvalue.1 -2520
+		}
+	}
+}
