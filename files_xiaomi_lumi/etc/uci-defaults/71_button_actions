@@ -50,13 +50,13 @@ cat << "EOF" > /usr/bin/reset_wifi_config
     ubus call network restart
     for i in 1 2 3
     do
-        echo 50 > /sys/class/backlight/lumi_r/brightness
-	echo 50 > /sys/class/backlight/lumi_g/brightness
-        echo 0 > /sys/class/backlight/lumi_b/brightness
+        echo 128 > /sys/class/leds/red/brightness
+	echo 128 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
 	sleep 1
-        echo 0 > /sys/class/backlight/lumi_r/brightness
-	echo 0 > /sys/class/backlight/lumi_g/brightness
-        echo 0 > /sys/class/backlight/lumi_b/brightness
+        echo 0 > /sys/class/leds/red/brightness
+	echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
 	sleep 1
     done
 }
@@ -69,13 +69,13 @@ cat << "EOF" > /usr/bin/reset_overlay
     firstboot -y
     for i in 1 2 3
     do
-        echo 70 > /sys/class/backlight/lumi_r/brightness
-        echo 0 > /sys/class/backlight/lumi_g/brightness
-        echo 0 > /sys/class/backlight/lumi_b/brightness
+        echo 180 > /sys/class/leds/red/brightness
+        echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
         sleep 1
-        echo 0 > /sys/class/backlight/lumi_r/brightness
-        echo 0 > /sys/class/backlight/lumi_g/brightness
-        echo 0 > /sys/class/backlight/lumi_b/brightness
+        echo 0 > /sys/class/leds/red/brightness
+        echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
         sleep 1
     done
     reboot
@@ -95,4 +95,4 @@ uci set system.@button[-1].action="released"
 uci set system.@button[-1].min="16"
 uci set system.@button[-1].max="25"
 uci set system.@button[-1].handler="/usr/bin/reset_overlay"
-uci commit system 
+uci commit system
