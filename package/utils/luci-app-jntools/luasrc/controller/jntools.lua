@@ -21,6 +21,7 @@ function action_flash(command)
 
 	if firmware then
 		cmd[#cmd + 1] = firmware
+		cmd[#cmd + 1] = "-q"
 	end
 
 	luci.http.prepare_content("application/json")
