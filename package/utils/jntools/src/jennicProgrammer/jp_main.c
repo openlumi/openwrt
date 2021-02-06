@@ -373,6 +373,7 @@ int main(int argc, char *argv[])
             case (CHIP_ID_JN5168_COG07B):   pcPartName = "JN5168";      break;
             
             case (CHIP_ID_JN5169):          pcPartName = "JN5169";      break;
+            case (CHIP_ID_JN5169_LUMI):     pcPartName = "JN5169";      break;
             case (CHIP_ID_JN5169_DONGLE):   pcPartName = "JN5169";      break;
 
             case (CHIP_ID_JN5172):          pcPartName = "JN5172";      break;
