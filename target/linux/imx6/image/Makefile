@@ -155,10 +155,10 @@ define Device/lumi
   KERNEL_NAME := zImage
   KERNEL_SUFFIX := -zImage
   KERNEL := kernel-bin
-  IMAGES := sysupgrade.bin dtb rootfs.bin devupgrade.tar
+  IMAGES := sysupgrade.bin dtb rootfs.bin sysupgrade-with-dtb.bin
   IMAGE_SIZE := 32768k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/devupgrade.tar := lumi-fullupgrade-tar
+  IMAGE/sysupgrade-with-dtb.bin := lumi-fullupgrade-tar  | append-metadata
   IMAGE/rootfs.bin := append-rootfs
   IMAGE/dtb := install-dtb
 
