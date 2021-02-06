@@ -22,10 +22,13 @@ then
     exit 1
 fi
 
+FIRMWARE="$1"
+shift
+
 # Put JN51xx MISO pin to low
 MISO_PIN=40
 if [ ! -f "/sys/class/gpio/gpio$MISO_PIN/direction" ]
-then 
+then
 	echo $MISO_PIN > /sys/class/gpio/export
 fi
 echo out > /sys/class/gpio/gpio$MISO_PIN/direction
@@ -34,7 +37,7 @@ echo 0 > /sys/class/gpio/gpio$MISO_PIN/value
 # Now reset JN51xx to put in Programming mode
 RESET_PIN_MK=41
 if [ ! -f "/sys/class/gpio/gpio$RESET_PIN_MK/direction" ]
-then 
+then
 	echo $RESET_PIN_MK > /sys/class/gpio/export
 fi
 
@@ -47,17 +50,10 @@ sleep 1
 
 # Now Flash the firmware
 # Call the flasher program
-if [ $1 ]
-then
-  echo Flash $1
-  if [ $2 ]
-  then
-    jnprogrammer -s $PORT -f $1 -V 2 $2
-  else
-    jnprogrammer -s $PORT -f $1 -V 2
-  fi
-  result=$?
-fi
+echo Flash $FIRMWARE
+jnprogrammer -s $PORT -f $FIRMWARE -V 2 $@
+result=$?
+
 sleep 1
 
 # Put JN51xx MISO pin to High
