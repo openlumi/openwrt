@@ -103,6 +103,7 @@ extern "C" {
 #define CHIP_ID_JN5169_HR               0x0080b686
 #define CHIP_ID_JN5169_VHR              0x00c0b686
 #define CHIP_ID_JN5169_DONGLE           0x6000b686  /* RHM */
+#define CHIP_ID_JN5169_LUMI             0x0100b686  /* Lumi Gateway */
 
 #define CHIP_ID_JN5169_COG09A           0x00009686  /* Cougar COG09A                                */
 #define CHIP_ID_JN5169_COG10A           0x10009686  /* Cougar COG10A                                */
