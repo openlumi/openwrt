@@ -25,9 +25,9 @@
 * This software is owned by NXP B.V. and/or its supplier and is protected
 * under applicable copyright laws. All rights are reserved. We grant You,
 * and any third parties, a license to use this software solely and
-* exclusively on NXP products [NXP Microcontrollers such as JN5148, JN5142, JN5139]. 
+* exclusively on NXP products [NXP Microcontrollers such as JN5148, JN5142, JN5139].
 * You, and any third parties must reproduce the copyright and warranty notice
-* and any other legend of ownership on each copy or partial copy of the 
+* and any other legend of ownership on each copy or partial copy of the
 * software.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -107,7 +107,8 @@ void print_usage_exit(char *argv[])
     fprintf(stderr, "    -I --initialbaud   <rate>          Set initial baud rate\n");
     fprintf(stderr, "    -P --programbaud   <rate>          Set programming baud rate\n");
     fprintf(stderr, "    -f --firmware      <firmware>      Load module flash with the given firmware file.\n");
-    fprintf(stderr, "    -v --verify                        Verify image. If specified, verify the image programmedwas loaded correctly.\n");
+    fprintf(stderr, "    -v --verify                        Verify image. If specified, verify the image programmed was loaded correctly.\n");
+    fprintf(stderr, "    -e --eraseeeprom                   Erase EEPROM. If specified, erase EEPROM in the chip.\n");
     fprintf(stderr, "    -m --mac           <MAC Address>   Set MAC address of device. If this is not specified, the address is read from flash.\n");
     exit(EXIT_FAILURE);
 }
@@ -127,7 +128,7 @@ teStatus cbProgress(void *pvUser, const char *pcTitle, const char *pcText, int i
         printf( "\n" );
     }
     printf( "%c[A%s = %d%%\n", 0x1B, pcText, progress );
-        
+
     return E_PRG_OK;
 }
 
@@ -137,21 +138,21 @@ static int importExtension( char * file, int * start, int * size ) {
         perror("stat");
         return 0;
     }
-    
+
     printf("File size: %lld bytes\n", (long long) sb.st_size);
     size_t bytestoread = sb.st_size;
-    
+
     if ( ( flashExtension = malloc( sb.st_size + 100 ) ) == NULL ) {
         perror("malloc");
         return 0;
     }
-    
+
     int fp, bytesread;
     if ( ( fp = open(file,O_RDONLY) ) < 0 ) {
         perror("open");
         return 0;
     }
-    
+
     char * pbuf = flashExtension;
     while ( bytestoread > 0 ) {
         if ( ( bytesread = read( fp, pbuf, bytestoread ) ) < 0 ) {
@@ -160,14 +161,14 @@ static int importExtension( char * file, int * start, int * size ) {
         bytestoread -= bytesread;
         pbuf += bytesread;
         }
-        
+
     if ( bytestoread == 0 ) {
         *start = (int)flashExtension;
         *size  = sb.st_size;
         printf( "Loaded binary of %d bytes\n", *size );
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -201,7 +202,7 @@ static teStatus ePRG_ImportExtension(tsPRG_Context *psContext)
     if ( ret ) {
         return E_PRG_OK;
     }
-        
+
     return E_PRG_ERROR;
 }
 
@@ -210,9 +211,10 @@ int main(int argc, char *argv[])
     tsPRG_Context   sPRG_Context;
     int ret = 0;
     int iVerify = 0;
+    int iEraseEEPROM = 0;
 
     printf("JennicModuleProgrammer Version: %s\n", pcPRG_Version);
-    
+
     memset(&sPRG_Context, 0, sizeof(tsPRG_Context));
 
     {
@@ -225,18 +227,19 @@ int main(int argc, char *argv[])
             {"serial",                  required_argument,  NULL,       's'},
             {"firmware",                required_argument,  NULL,       'f'},
             {"verify",                  no_argument,        NULL,       'v'},
+            {"eraseeeprom",             no_argument,        NULL,       'e'},
             {"mac",                     required_argument,  NULL,       'm'},
             { NULL, 0, NULL, 0}
         };
         signed char opt;
         int option_index;
-        
-        while ((opt = getopt_long(argc, argv, "hs:V:f:vI:P:m:", long_options, &option_index)) != -1) 
+
+        while ((opt = getopt_long(argc, argv, "hs:V:f:veI:P:m:", long_options, &option_index)) != -1)
         {
-            switch (opt) 
+            switch (opt)
             {
                 case 0:
-                    
+
                 case 'h':
                     print_usage_exit(argv);
                     break;
@@ -245,6 +248,9 @@ int main(int argc, char *argv[])
                     break;
                 case 'v':
                     iVerify = 1;
+                    break;
+                case 'e':
+                    iEraseEEPROM = 1;
                     break;
                 case 'I':
                 {
@@ -297,7 +303,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    
+
 #if 0
     // TEST TODO
     int ret = importExtension( "/usr/share/iot/FlashProgrammerExtension_JN5169.bin",
@@ -308,7 +314,7 @@ int main(int argc, char *argv[])
     return 0;
     // TEST
 #endif
-    
+
     if (eUART_Initialise((char *)cpSerialDevice, iInitialSpeed, &sPRG_Context.iUartFD, &sPRG_Context.sUartOptions) != E_PRG_OK)
     {
         fprintf(stderr, "Error opening serial port\n");
@@ -355,7 +361,7 @@ int main(int argc, char *argv[])
     if ( ret == 0 && iVerbosity > 0)
     {
         const char *pcPartName;
-        
+
         switch (sPRG_Context.sChipDetails.u32ChipId)
         {
             case (CHIP_ID_JN5148_REV2A):    pcPartName = "JN5148";      break;
@@ -371,7 +377,7 @@ int main(int argc, char *argv[])
             case (CHIP_ID_JN5168):          pcPartName = "JN5168";      break;
             case (CHIP_ID_JN5168_COG07A):   pcPartName = "JN5168";      break;
             case (CHIP_ID_JN5168_COG07B):   pcPartName = "JN5168";      break;
-            
+
             case (CHIP_ID_JN5169):          pcPartName = "JN5169";      break;
             case (CHIP_ID_JN5169_LUMI):     pcPartName = "JN5169";      break;
             case (CHIP_ID_JN5169_DONGLE):   pcPartName = "JN5169";      break;
@@ -384,15 +390,15 @@ int main(int argc, char *argv[])
         }
 
         printf("Detected Chip: %s\n", pcPartName);
-        
-        printf("MAC Address:   %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n", 
-                sPRG_Context.sChipDetails.au8MacAddress[0] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[1] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[2] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[3] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[4] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[5] & 0xFF, 
-                sPRG_Context.sChipDetails.au8MacAddress[6] & 0xFF, 
+
+        printf("MAC Address:   %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+                sPRG_Context.sChipDetails.au8MacAddress[0] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[1] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[2] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[3] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[4] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[5] & 0xFF,
+                sPRG_Context.sChipDetails.au8MacAddress[6] & 0xFF,
                 sPRG_Context.sChipDetails.au8MacAddress[7] & 0xFF);
     }
 
@@ -400,7 +406,7 @@ int main(int argc, char *argv[])
     if (ret == 0 && pcFirmwareFile)
     {
         /* Have file to program */
-    
+
         if (ePRG_FwOpen(&sPRG_Context, (char *)pcFirmwareFile)) {
             /* Error with file. FW module has displayed error so just exit. */
             LL_LOG( "Error with firmware file" );
@@ -412,8 +418,8 @@ int main(int argc, char *argv[])
             LL_LOG( "Error in verification" );
             ret = 7;
         }
-        
-        if ( ret == 0 ) {
+
+        if ( iEraseEEPROM && ret == 0 ) {
             if ( ePRG_ImportExtension(&sPRG_Context) != E_PRG_OK ) {
                 LL_LOG( "Error importing extension" );
                 ret = 8;
@@ -423,11 +429,11 @@ int main(int argc, char *argv[])
             }
         }
     }
-    
+
     // Set BL and local port back to initial speed (in reverse order)
     eBL_SetBaudrate(&sPRG_Context, iInitialSpeed);
     eUART_SetBaudRate(sPRG_Context.iUartFD, &sPRG_Context.sUartOptions, iInitialSpeed);
-    
+
     if ( ret == 0 && iVerbosity > 0) {
         printf("Success\n");
     }
