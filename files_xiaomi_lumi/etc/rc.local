@@ -10,4 +10,10 @@ if [ -f /etc/asound.state ]; then
   /usr/sbin/alsactl -f /etc/asound.state restore
 fi
 
+for i in 1 0; do
+  for c in red green blue; do
+    echo $i > /sys/class/leds/$c/brightness
+  done
+done
+
 exit 0
