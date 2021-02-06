@@ -107,6 +107,7 @@ void print_usage_exit(char *argv[])
     fprintf(stderr, "    -I --initialbaud   <rate>          Set initial baud rate\n");
     fprintf(stderr, "    -P --programbaud   <rate>          Set programming baud rate\n");
     fprintf(stderr, "    -f --firmware      <firmware>      Load module flash with the given firmware file.\n");
+    fprintf(stderr, "    -q --quiet                         Don't print verbose percentage on writing.\n");
     fprintf(stderr, "    -v --verify                        Verify image. If specified, verify the image programmed was loaded correctly.\n");
     fprintf(stderr, "    -e --eraseeeprom                   Erase EEPROM. If specified, erase EEPROM in the chip.\n");
     fprintf(stderr, "    -m --mac           <MAC Address>   Set MAC address of device. If this is not specified, the address is read from flash.\n");
@@ -114,7 +115,7 @@ void print_usage_exit(char *argv[])
 }
 
 
-teStatus cbProgress(void *pvUser, const char *pcTitle, const char *pcText, int iNumSteps, int iProgress)
+teStatus cbProgressVerbose(void *pvUser, const char *pcTitle, const char *pcText, int iNumSteps, int iProgress)
 {
     int progress;
     if (iNumSteps > 0)
@@ -128,6 +129,15 @@ teStatus cbProgress(void *pvUser, const char *pcTitle, const char *pcText, int i
         printf( "\n" );
     }
     printf( "%c[A%s = %d%%\n", 0x1B, pcText, progress );
+
+    return E_PRG_OK;
+}
+
+teStatus cbProgressQuiet(void *pvUser, const char *pcTitle, const char *pcText, int iNumSteps, int iProgress)
+{
+    if (iProgress == 0) {
+        printf( "%s ...\n", pcText );
+    }
 
     return E_PRG_OK;
 }
@@ -212,6 +222,7 @@ int main(int argc, char *argv[])
     int ret = 0;
     int iVerify = 0;
     int iEraseEEPROM = 0;
+    int iPercentVerbose = 1;
 
     printf("JennicModuleProgrammer Version: %s\n", pcPRG_Version);
 
@@ -228,13 +239,14 @@ int main(int argc, char *argv[])
             {"firmware",                required_argument,  NULL,       'f'},
             {"verify",                  no_argument,        NULL,       'v'},
             {"eraseeeprom",             no_argument,        NULL,       'e'},
+            {"quiet",                   no_argument,        NULL,       'q'},
             {"mac",                     required_argument,  NULL,       'm'},
             { NULL, 0, NULL, 0}
         };
         signed char opt;
         int option_index;
 
-        while ((opt = getopt_long(argc, argv, "hs:V:f:veI:P:m:", long_options, &option_index)) != -1)
+        while ((opt = getopt_long(argc, argv, "hs:V:f:veqI:P:m:", long_options, &option_index)) != -1)
         {
             switch (opt)
             {
@@ -251,6 +263,9 @@ int main(int argc, char *argv[])
                     break;
                 case 'e':
                     iEraseEEPROM = 1;
+                    break;
+                case 'q':
+                    iPercentVerbose = 0;
                     break;
                 case 'I':
                 {
@@ -302,6 +317,13 @@ int main(int argc, char *argv[])
                     print_usage_exit(argv);
             }
         }
+    }
+
+    void * cbProgress;
+    if (iPercentVerbose) {
+    	cbProgress = cbProgressVerbose;
+    } else {
+    	cbProgress = cbProgressQuiet;
     }
 
 #if 0
@@ -435,7 +457,7 @@ int main(int argc, char *argv[])
     eUART_SetBaudRate(sPRG_Context.iUartFD, &sPRG_Context.sUartOptions, iInitialSpeed);
 
     if ( ret == 0 && iVerbosity > 0) {
-        printf("Success\n");
+        printf("Success!\n");
     }
     return 0;
 }
