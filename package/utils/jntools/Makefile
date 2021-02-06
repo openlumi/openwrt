@@ -6,13 +6,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jntools
 PKG_VERSION:=0.11
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR:= $(BUILD_DIR)/$(PKG_NAME)
 
 CC = gcc
 CFLAGS = -Wall
-LDFLAGS = 
+LDFLAGS =
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -47,6 +47,8 @@ define Package/jntools/install
 	$(LN) iot_jp $(1)/usr/bin/jnprogrammer
 	$(INSTALL_BIN) ./files/jnflash $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/jntool $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/share/iot/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/jennicProgrammer/FlashProgrammerExtension_*.bin $(1)/usr/share/iot/
 endef
 
 $(eval $(call BuildPackage,jntools))
