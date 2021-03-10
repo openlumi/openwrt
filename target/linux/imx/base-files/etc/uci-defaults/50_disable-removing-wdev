@@ -1,0 +1,6 @@
+. /lib/functions.sh
+
+sed -i 's/iw dev "$wdev" del/# iw dev "$wdev" del/' /lib/netifd/wireless/mac80211.sh
+sed -i 's/nl80211.request(nl80211.const.NL80211_CMD_DEL_INTERFACE/\/\/ nl80211.request(nl80211.const.NL80211_CMD_DEL_INTERFACE/' /usr/share/hostap/common.uc
+
+exit 0
