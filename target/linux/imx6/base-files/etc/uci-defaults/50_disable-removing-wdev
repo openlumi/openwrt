@@ -1,0 +1,5 @@
+. /lib/functions.sh
+
+sed -i 's/iw dev "$wdev" del/# iw dev "$wdev" del/' /lib/netifd/wireless/mac80211.sh
+
+exit 0
