@@ -1,0 +1,61 @@
+#!/bin/sh
+
+PORT="${PORT:-/dev/ttymxc1}"
+BAUDRATE="${BAUDRATE:-115200}"
+
+if [[ $# -lt 1 ]]; then
+    echo -e "Usage:\n\t$0 <command>"
+    echo 
+    echo "Available commands are: soft_reset, erase_pdm, router_mode"
+    exit 1
+fi
+
+soft_reset() {
+    echo "Doing soft reset..."
+    printf '\x01\x02\x10\x11\x02\x10\x02\x10\x11\x03' > $PORT
+}
+
+erase_pdm() {
+    echo "Erasing PDM..."
+    printf '\x01\x02\x10\x12\x02\x10\x02\x10\x12\x03' > $PORT
+}
+
+router_mode() {
+    erase_pdm
+    sleep 1
+    # set device type = router
+    echo "set device type = router"
+    #printf '\x01\x02\x10\x23\x02\x10\x02\x11\x23\x02\x11\x03' > $PORT
+    printf '\x01\x02\x10\x23\x02\x10\x02\x11\x20\x02\x12\x03' > $PORT
+    sleep 1
+    # start network scan
+    echo "Starting network scan"
+    printf '\x01\x02\x10\x25\x02\x10\x02\x10\x25\x03' > $PORT
+}
+
+original_settings="$(stty -g -F $PORT)"
+stty -F "$PORT" raw $BAUDRATE
+
+# Kill background process and restore terminal when this shell exits
+trap 'set +e; kill "$bgPid"; stty "$original_settings" -F $PORT' EXIT
+hexdump -v -C $PORT & bgPid=$!
+
+sleep 1
+
+case "$1" in
+    "soft_reset")
+        soft_reset
+        ;;
+    "erase_pdm")
+        erase_pdm
+        ;;
+    "router_mode")
+        router_mode
+        ;;
+    *)
+        echo "Invalid action. Valid actions are: soft_reset, erase_pdm, router_mode"
+        exit 1
+        ;;
+esac
+
+sleep 1
