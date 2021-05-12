@@ -1,0 +1,68 @@
+#!/bin/sh
+
+PORT="${PORT:-/dev/ttymxc1}"
+
+memtool 20E00E4=15 > /dev/null
+memtool 20E00E8=15 > /dev/null
+
+
+if [ $# != 1 ] && [ $# != 2 ]
+then
+    echo "Error: Invalid arguments"
+    echo "    To flash the firmware without erasing PDM"
+    echo "        ${0} <Firmware_File>"
+    echo "    To flash the firmware erasing PDM"
+    echo "        ${0} <Firmware_File> --erasepdm"
+    exit 1
+fi
+
+if [ ! -f "$1" ]
+then
+    echo "Error: Update File $1 does not exist"
+    exit 1
+fi
+
+FIRMWARE="$1"
+shift
+
+# Put JN51xx MISO pin to low
+MISO_PIN=40
+if [ ! -f "/sys/class/gpio/gpio$MISO_PIN/direction" ]
+then
+	echo $MISO_PIN > /sys/class/gpio/export
+fi
+echo out > /sys/class/gpio/gpio$MISO_PIN/direction
+echo 0 > /sys/class/gpio/gpio$MISO_PIN/value
+
+# Now reset JN51xx to put in Programming mode
+RESET_PIN_MK=41
+if [ ! -f "/sys/class/gpio/gpio$RESET_PIN_MK/direction" ]
+then
+	echo $RESET_PIN_MK > /sys/class/gpio/export
+fi
+
+echo out > /sys/class/gpio/gpio$RESET_PIN_MK/direction
+
+echo 0 > /sys/class/gpio/gpio$RESET_PIN_MK/value
+sleep 1
+echo 1 > /sys/class/gpio/gpio$RESET_PIN_MK/value
+sleep 1
+
+# Now Flash the firmware
+# Call the flasher program
+echo Flash $FIRMWARE
+jnprogrammer -s $PORT -f $FIRMWARE -V 2 $@
+result=$?
+
+sleep 1
+
+# Put JN51xx MISO pin to High
+echo 1 > /sys/class/gpio/gpio$MISO_PIN/value
+sleep 1
+# Now reset JN51xx to put in running mode
+echo 0 > /sys/class/gpio/gpio$RESET_PIN_MK/value
+sleep 1
+echo 1 > /sys/class/gpio/gpio$RESET_PIN_MK/value
+sleep 1
+
+exit 0
