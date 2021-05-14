@@ -1,0 +1,37 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+aqara,zhwg11lm|\
+xiaomi,dgnwg05lm)
+	# Set up LAN and the AP only when LAN is missing.
+	# This preserves saved settings on upgrade.
+	uci -q get network.lan >/dev/null || {
+		# Without Ethernet ports, config_generate skips LAN.
+		# Create LAN and br-lan here for the setup AP.
+		uci batch <<-'UCI_NETWORK'
+			set network.br_lan='device'
+			set network.br_lan.name='br-lan'
+			set network.br_lan.type='bridge'
+			set network.br_lan.bridge_empty='1'
+
+			set network.lan='interface'
+			set network.lan.device='br-lan'
+			set network.lan.proto='static'
+			add_list network.lan.ipaddr='192.168.1.1/24'
+		UCI_NETWORK
+		[ -e /proc/sys/net/ipv6 ] && uci set network.lan.ip6assign='60'
+
+		# Clear radio and AP disable flags to support OpenWrt 23, 24 and 25.
+		uci -q delete wireless.@wifi-device[0].disabled
+		uci -q delete wireless.@wifi-iface[0].disabled
+
+		# Give the AP an additional MAC to keep the base MAC for the STA.
+		mac1="$(ucode /usr/share/hostap/wdev.uc phy0 get_macaddr id=1)" &&
+			uci set "wireless.@wifi-iface[0].macaddr=$mac1"
+
+		uci commit wireless && uci commit network
+	}
+	;;
+esac
+
+exit 0
