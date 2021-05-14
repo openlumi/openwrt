@@ -1,0 +1,100 @@
+mkdir -p /etc/hotplug.d/button
+cat << "EOF" > /etc/hotplug.d/button/00-button
+source /lib/functions.sh
+
+do_button () {
+    local button
+    local action
+    local handler
+    local min
+    local max
+
+    config_get button "${1}" button
+    config_get action "${1}" action
+    config_get handler "${1}" handler
+    config_get min "${1}" min
+    config_get max "${1}" max
+
+    [ "${ACTION}" = "${action}" -a "${BUTTON}" = "${button}" -a -n "${handler}" ] && {
+        [ -z "${min}" -o -z "${max}" ] && eval ${handler}
+        [ -n "${min}" -a -n "${max}" ] && {
+            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && eval ${handler}
+        }
+    }
+}
+
+config_load system
+config_foreach do_button button
+EOF
+
+cat << "EOF" > /usr/bin/reset_wifi_config
+#!/bin/sh
+{
+    rm -f /etc/config/network
+    /bin/config_generate generate_static_network
+    uci set network.@device[0].ports='wlan0'
+    uci set network.wwan='interface'
+    uci set network.wwan.proto='dhcp'
+    uci commit network
+
+    rm -f /etc/config/wireless
+    wifi config
+    uci delete wireless.@wifi-device[0].disabled
+    uci delete wireless.@wifi-device[-1].disabled
+    uci set wireless.@wifi-iface[-1].network='wwan'
+    uci set wireless.@wifi-iface[-1].mode='sta'
+    uci set wireless.@wifi-iface[-1].ssid='$0102030405$'
+    uci delete wireless.@wifi-iface[-1].encryption
+    uci commit wireless
+    ubus call network restart
+    for i in 1 2 3
+    do
+        echo 128 > /sys/class/leds/red/brightness
+	echo 128 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
+	sleep 1
+        echo 0 > /sys/class/leds/red/brightness
+	echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
+	sleep 1
+    done
+}
+EOF
+chmod +x /usr/bin/reset_wifi_config
+
+cat << "EOF" > /usr/bin/reset_overlay
+#!/bin/sh
+{
+    rm -rf /overlay/upper/.* /overlay/upper/*
+
+    for i in 1 2 3
+    do
+        echo 180 > /sys/class/leds/red/brightness
+        echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
+        sleep 1
+        echo 0 > /sys/class/leds/red/brightness
+        echo 0 > /sys/class/leds/green/brightness
+        echo 0 > /sys/class/leds/blue/brightness
+        sleep 1
+    done
+    reboot
+}
+EOF
+chmod +x /usr/bin/reset_overlay
+
+uci add system button
+uci set system.@button[-1].button="BTN_0"
+uci set system.@button[-1].action="released"
+uci set system.@button[-1].min="8"
+uci set system.@button[-1].max="14"
+uci set system.@button[-1].handler="/usr/bin/reset_wifi_config"
+uci add system button
+uci set system.@button[-1].button="BTN_0"
+uci set system.@button[-1].action="released"
+uci set system.@button[-1].min="16"
+uci set system.@button[-1].max="25"
+uci set system.@button[-1].handler="/usr/bin/reset_overlay"
+uci commit system
+
+exit 0
