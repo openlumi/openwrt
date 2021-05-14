@@ -10,7 +10,9 @@ technexion,imx7d-pico-pi)
 	;;
 aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
-	ucidef_set_interfaces_lan_wan "wlan0" "wlan1"
+	# These Wi-Fi-only devices have no Ethernet ports. Define LAN without
+	# a device to prevent 99-default_network from adding eth0.
+	ucidef_set_interface "lan" protocol "static"
 	;;
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
