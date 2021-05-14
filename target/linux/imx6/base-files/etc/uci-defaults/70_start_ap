@@ -1,0 +1,16 @@
+# multi if wersion
+uci delete wireless.@wifi-device[-1].disabled
+uci delete wireless.@wifi-device[0].disabled
+uci set wireless.@wifi-iface[0].network='wwan'
+uci set wireless.@wifi-iface[0].mode='sta'
+uci set wireless.@wifi-iface[0].ssid='$0102030405$'
+uci delete wireless.@wifi-iface[0].encryption
+uci commit wireless
+
+uci set network.lan.ifname='wlan0'
+uci delete network.lan.type
+uci set network.wwan='interface'
+uci set network.wwan.proto='dhcp'
+uci commit network
+
+exit 0
