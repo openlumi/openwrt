@@ -1,0 +1,7 @@
+uci -q batch <<-EOF >/dev/null
+	set firewall.@zone[0].input='ACCEPT'
+	set firewall.@zone[1].input='ACCEPT'
+EOF
+uci commit firewall
+
+exit 0

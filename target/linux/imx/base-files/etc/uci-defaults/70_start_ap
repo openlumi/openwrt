@@ -1,0 +1,27 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+	aqara,zhwg11lm |\
+	xiaomi,dgnwg05lm )
+		# multi if version
+		uci delete wireless.@wifi-device[0].disabled
+		uci delete wireless.@wifi-device[-1].disabled
+		uci set wireless.@wifi-iface[-1].network='wwan'
+		uci set wireless.@wifi-iface[-1].mode='sta'
+		uci set wireless.@wifi-iface[-1].ssid='$0102030405$'
+		uci delete wireless.@wifi-iface[-1].encryption
+		uci commit wireless
+
+		# create wwan zone as it is the default for scanned networks
+		uci set network.@device[0].ports='wlan0'
+		uci set network.wwan='interface'
+		uci set network.wwan.proto='dhcp'
+		uci commit network
+
+		# and add wwan to wan zone in firewall
+		uci set firewall.@zone[1].network='wwan wan wan6'
+		uci commit firewall
+	;;
+esac
+
+exit 0
