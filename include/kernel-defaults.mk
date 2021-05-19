@@ -127,7 +127,8 @@ define Kernel/Configure/Default
 		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev; \
 	}
 	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] || $(KERNEL_MAKE) $(if $(findstring uml,$(BOARD)),ARCH=$(ARCH)) INSTALL_HDR_PATH=$(LINUX_DIR)/user_headers headers_install
-	grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | $(MKHASH) md5 > $(LINUX_DIR)/.vermagic
+	#grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | $(MKHASH) md5 > $(LINUX_DIR)/.vermagic
+	grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | echo "dc843fe12d3941156e8d122c013b0234" > $(LINUX_DIR)/.vermagic
 endef
 
 define Kernel/Configure/Initramfs
