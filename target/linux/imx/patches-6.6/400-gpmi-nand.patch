@@ -1,0 +1,18 @@
+Xiaomi Gateways uses nand chips with ECC and this code forces
+using minimum ecc method. The same is implemented in DTB file but
+for 24.10 we want to keep it hardcoded to have time for migration.
+
+Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
+
+--- a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
++++ b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
+@@ -697,8 +697,7 @@ static int common_nfc_set_geometry(struct gpmi_nand_data *this)
+ 	bool use_minimun_ecc;
+ 	int err;
+
+-	use_minimun_ecc = of_property_read_bool(this->dev->of_node,
+-						"fsl,use-minimum-ecc");
++	use_minimun_ecc = true;
+
+ 	/* use legacy bch geometry settings by default*/
+ 	if ((!use_minimun_ecc && mtd->oobsize < 1024) ||
