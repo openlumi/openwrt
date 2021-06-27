@@ -1,0 +1,33 @@
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -3253,7 +3253,7 @@ exit:
+ 	return ret;
+ }
+
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0) || defined (BUILD_OPENWRT))
+ static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy, int ifindex, u32 changed)
+ #else
+ static int cfg80211_rtw_set_wiphy_params(struct wiphy *wiphy, u32 changed)
+@@ -4165,7 +4165,7 @@ static int cfg80211_rtw_set_txpower(stru
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	struct wireless_dev *wdev,
+ #endif
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0) || defined (BUILD_OPENWRT))
+ 	int ifindex,
+ #endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)) || defined(COMPAT_KERNEL_RELEASE)
+@@ -4230,10 +4230,10 @@ static int cfg80211_rtw_get_txpower(stru
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	struct wireless_dev *wdev,
+ #endif
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0) || defined (BUILD_OPENWRT))
+ 	int ifindex,
+ #endif
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0) || defined (BUILD_OPENWRT))
+ 	unsigned int link_id,
+ #endif
+ 	int *dbm)
