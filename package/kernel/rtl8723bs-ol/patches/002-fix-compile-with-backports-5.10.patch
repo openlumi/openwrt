@@ -1,0 +1,22 @@
+Apply some checks for 5.10 from backports instead of kernel's version 5.4.
+
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -5884,7 +5884,7 @@ exit:
+ 	return ret;
+ }
+
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && !defined(BUILD_OPENWRT)
+ static void cfg80211_rtw_mgmt_frame_register(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0))
+ 	struct wireless_dev *wdev,
+@@ -7127,7 +7127,7 @@ static struct cfg80211_ops rtw_cfg80211_
+
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && !defined(BUILD_OPENWRT)
+ 	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
+ #endif
+ #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34) && LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 35))
