@@ -8,6 +8,7 @@ case "$board" in
 technexion,imx7d-pico-pi)
 	ucidef_set_interface_lan "eth0"
 	;;
+aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
 	ucidef_set_interfaces_lan "wlan0"
 	;;
