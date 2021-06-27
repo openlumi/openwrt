@@ -36,6 +36,12 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
+	aqara,zhwg11lm |\
+	xiaomi,dgnwg05lm )
+		local platform_dir_name=$(echo $board | sed 's/,/_/g')
+		nand_do_platform_check $platform_dir_name $1
+		return $?;
+		;;
 	gw,imx6dl-gw51xx |\
 	gw,imx6dl-gw52xx |\
 	gw,imx6dl-gw53xx |\
@@ -64,11 +70,6 @@ platform_check_image() {
 		nand_do_platform_check $board $1
 		return $?;
 		;;
-	xiaomi,dgnwg05lm )
-		local platform_dir_name=$(echo $board | sed 's/,/_/g')
-		nand_do_platform_check $platform_dir_name $1
-		return $?;
-		;;
 	toradex,apalis_imx6q-eval |\
 	toradex,apalis_imx6q-ixora |\
 	toradex,apalis_imx6q-ixora-v1.1 )
@@ -84,6 +85,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	aqara,zhwg11lm |\
 	gw,imx6dl-gw51xx |\
 	gw,imx6dl-gw52xx |\
 	gw,imx6dl-gw53xx |\
