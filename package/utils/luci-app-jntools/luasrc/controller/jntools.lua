@@ -4,7 +4,7 @@
 module("luci.controller.jntools", package.seeall)
 
 function index()
-	entry({"admin", "system", "jntools"}, template("jntools"), _("Zigbee Tools"), 30)
+	entry({"admin", "system", "jntools"}, template("jntools"), _("Zigbee Tools"), 65).acl_depends={ "luci-mod-system-config" }
 	entry({"admin", "system", "jntools", "flash"}, post("action_flash")).leaf = true
 	entry({"admin", "system", "jntools", "exec"}, post("action_exec")).leaf = true
 end
