@@ -47,7 +47,8 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIUART_H4 \
 	CONFIG_BT_HCIUART_NOKIA=n \
 	CONFIG_BT_HCIUART_SERDEV=y \
-	CONFIG_BT_HIDP
+	CONFIG_BT_HIDP \
+	CONFIG_BT_RTL
   $(call AddDepends/rfkill)
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.ko \
