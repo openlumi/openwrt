@@ -118,6 +118,7 @@ xiaomi,miwifi-3c)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x4000" "0x10000"
 	;;
+xiaomi,miwifi-r3|\
 xiaomi,mi-router-3g|\
 xiaomi,mi-router-3-pro|\
 xiaomi,mi-router-4|\
