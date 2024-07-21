@@ -32,7 +32,7 @@ Subject: [PATCH] mtd ralink add mt7620-nand driver
 +obj-$(CONFIG_MTD_NAND_MT7620)	+= ralink_nand.o
 --- /dev/null
 +++ b/drivers/mtd/maps/ralink_nand.c
-@@ -0,0 +1,2095 @@
+@@ -0,0 +1,2100 @@
 +#define DEBUG
 +#include <linux/device.h>
 +#undef DEBUG
@@ -61,6 +61,11 @@ Subject: [PATCH] mtd ralink add mt7620-nand driver
 +#define BLOCK_ALIGNED(a) ((a) & (CFG_BLOCKSIZE - 1))
 +
 +#define READ_STATUS_RETRY	1000
++
++#ifndef MTD_MAX_OOBFREE_ENTRIES_LARGE
++#define MTD_MAX_OOBFREE_ENTRIES_LARGE	32
++#define MTD_MAX_ECCPOS_ENTRIES_LARGE	640
++#endif
 +
 +struct nand_ecclayout {
 +	__u32 eccbytes;
