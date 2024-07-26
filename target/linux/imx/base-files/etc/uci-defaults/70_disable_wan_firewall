@@ -2,6 +2,7 @@
 
 case "$(board_name)" in
 	aqara,zhwg11lm |\
+	geniatech,gtw360 | \
 	xiaomi,dgnwg05lm )
     uci -q batch <<-EOF >/dev/null
 set firewall.@zone[0].input='ACCEPT'

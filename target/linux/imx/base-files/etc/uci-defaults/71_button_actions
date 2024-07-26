@@ -90,6 +90,50 @@ EOF
 }
 EOF
 	;;
+	geniatech,gtw360 )
+		cat << "EOF" > /usr/bin/reset_wifi_config
+#!/bin/sh
+{
+    rm -f /etc/config/network
+    /bin/config_generate generate_static_network
+    uci set network.wwan='interface'
+    uci set network.wwan.proto='dhcp'
+    uci commit network
+
+    rm -f /etc/config/wireless
+    wifi config
+    uci delete wireless.@wifi-device[0].disabled
+    uci set wireless.@wifi-device[0].channel='1'
+    uci set wireless.@wifi-device[0].band='2g'
+    uci set wireless.@wifi-device[0].country='US'
+    uci delete wireless.@wifi-device[0].htmode
+    uci commit wireless
+    ubus call network restart
+    for i in 1 2 3
+    do
+        echo 100 > /sys/class/leds/amber/brightness
+	sleep 1
+        echo 0 > /sys/class/leds/amber/brightness
+	sleep 1
+    done
+}
+EOF
+		cat << "EOF" > /usr/bin/reset_overlay
+#!/bin/sh
+{
+    rm -rf /overlay/upper/.* /overlay/upper/*
+
+    for i in 1 2 3
+    do
+        echo 100 > /sys/class/leds/blue/brightness
+        sleep 1
+        echo 0 > /sys/class/leds/blue/brightness
+        sleep 1
+    done
+    reboot
+}
+EOF
+	;;
 esac
 
 uci add system button
