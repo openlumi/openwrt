@@ -82,6 +82,54 @@ xiaomi,dgnwg05lm)
 	reboot
 	EOF
 	;;
+geniatech,gtw360)
+	cat > /usr/bin/reset_wifi_config <<-'EOF'
+	#!/bin/sh
+
+	rm -f /etc/config/network /etc/config/wireless
+	config_generate
+	wifi config
+
+	uci set network.wwan='interface'
+	uci set network.wwan.proto='dhcp'
+
+	# Clear radio and AP disable flags to support OpenWrt 23, 24 and 25.
+	uci -q delete wireless.@wifi-device[0].disabled
+	uci -q delete wireless.@wifi-iface[0].disabled
+
+	uci set wireless.@wifi-device[0].channel='1'
+	uci set wireless.@wifi-device[0].band='2g'
+	uci set wireless.@wifi-device[0].country='US'
+	uci delete wireless.@wifi-device[0].htmode
+
+	uci commit network
+	uci commit wireless
+	ubus call network restart
+
+	for i in 1 2 3; do
+		echo 100 > /sys/class/leds/amber/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/amber/brightness
+		sleep 1
+	done
+	EOF
+
+	cat > /usr/bin/reset_overlay <<-'EOF'
+	#!/bin/sh
+
+	firstboot -y || exit 1
+	rm -rf /overlay/upper/.* /overlay/upper/*
+
+	for i in 1 2 3; do
+		echo 100 > /sys/class/leds/blue/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/blue/brightness
+		sleep 1
+	done
+
+	reboot
+	EOF
+	;;
 *)
 	exit 0
 	;;

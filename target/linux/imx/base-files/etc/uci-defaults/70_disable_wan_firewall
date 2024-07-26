@@ -11,6 +11,7 @@ set_wan_input() {
 
 case "$(board_name)" in
 aqara,zhwg11lm|\
+geniatech,gtw360|\
 xiaomi,dgnwg05lm)
 	config_load firewall
 	config_foreach set_wan_input zone
