@@ -1,0 +1,280 @@
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -674,6 +674,7 @@
+ 	imx6ull-14x14-evk.dtb \
+ 	imx6ull-colibri-eval-v3.dtb \
+ 	imx6ull-colibri-wifi-eval-v3.dtb \
++	imx6ull-gtw360.dtb \
+ 	imx6ull-myir-mys-6ulx-eval.dtb \
+ 	imx6ull-opos6uldev.dtb \
+ 	imx6ull-phytec-segin-ff-rdk-nand.dtb \
+--- a/arch/arm/boot/dts/imx6ull-gtw360.dts
++++ b/arch/arm/boot/dts/imx6ull-gtw360.dts
+@@ -0,0 +1,267 @@
++/dts-v1/;
++
++#include <dt-bindings/input/input.h>
++#include "imx6ull.dtsi"
++
++/ {
++	model = "Geniatech GTW360";
++	compatible = "geniatech,gtw360", "fsl,imx6ull";
++
++	chosen {
++		bootargs = "console=ttymxc0,115200 root=/dev/mmcblk1p2 rootwait rw";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x80000000 0x20000000>;
++	};
++
++	aliases {
++		led-boot = &led_blue;
++		led-failsafe = &led_amber;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_leds>;
++
++		led_amber: amber {
++			label = "amber";
++			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led_blue: blue {
++			label = "blue";
++			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led_green: green {
++			label = "green";
++			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_keys>;
++
++		btn0 {
++			label = "btn0";
++			gpios = <&gpio5 6 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <10>;
++		};
++	};
++
++	gpio-export {
++		compatible = "gpio-export";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_gpio>;
++
++		zigbee_reset {
++			gpio-export,name = "zigbee-reset";
++			gpio-export,output = <0x01>;
++			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
++	sdio_pwrseq: pwrsec {
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
++	};
++};
++
++&cpu0 {
++	arm-supply = <&reg_arm>;
++	soc-supply = <&reg_soc>;
++};
++
++&clks {
++	assigned-clocks = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <786432000>;
++};
++
++&fec1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_enet1>;
++	phy-mode = "rmii";
++	phy-handle = <&ethphy0>;
++	status = "okay";
++
++	mdio {
++		#address-cells = <0x01>;
++		#size-cells = <0x00>;
++
++		ethphy0: ethernet-phy@2 {
++			reg = <0x02>;
++			micrel,led-mode = <0x01>;
++			clocks = <&clks IMX6UL_CLK_ENET_REF>;
++			clock-names = "rmii-ref";
++		};
++	};
++};
++
++&gpc {
++	fsl,cpu_pupscr_sw2iso = <0x01>;
++	fsl,cpu_pupscr_sw = <0x00>;
++	fsl,cpu_pdnscr_iso2sw = <0x01>;
++	fsl,cpu_pdnscr_iso = <0x01>;
++	fsl,ldo-bypass = <0x00>;
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_spi4>;
++
++	pinctrl_leds: ledsgrp {
++		fsl,pins = <0x7c 0x308 0x00 0x05 0x00 0xb0 0x60 0x2ec 0x00 0x05 0x00 0xb0 0x64 0x2f0 0x00 0x05 0x00 0xb0>;
++	};
++
++	pinctrl_keys: keysgrp {
++		fsl,pins = <0x34 0x2c0 0x00 0x05 0x00 0x70a1>;
++	};
++
++	pinctrl_gpio: gpiogrp {
++		fsl,pins = <0x70 0x2fc 0x00 0x05 0x00 0xb0>;
++	};
++
++	pinctrl_spi4: spi4grp {
++		fsl,pins = <0x14 0x2a0 0x00 0x05 0x00 0x70a1 0x18 0x2a4 0x00 0x05 0x00 0x70a1 0x38 0x2c4 0x00 0x05 0x00 0x70a1 0x3c 0x2c8 0x00 0x05 0x00 0x80000000>;
++	};
++
++	pinctrl_enet1: enet1grp {
++		fsl,pins = <0x78 0x304 0x00 0x00 0x00 0x1b0b0 0x74 0x300 0x578 0x00 0x00 0x1b0b0 0xcc 0x358 0x00 0x00 0x00 0x1b0b0 0xe0 0x36c 0x00 0x00 0x00 0x1b0b0 0xc4 0x350 0x00 0x00 0x00 0x1b0b0 0xc8 0x354 0x00 0x00 0x00 0x1b0b0 0xd8 0x364 0x00 0x00 0x00 0x1b0b0 0xd0 0x35c 0x00 0x00 0x00 0x1b0b0 0xd4 0x360 0x00 0x00 0x00 0x1b0b0 0xdc 0x368 0x574 0x04 0x02 0x4001b031>;
++	};
++
++	pinctrl_uart1: uart1grp {
++		fsl,pins = <0x84 0x310 0x00 0x00 0x00 0x1b0b1 0x88 0x314 0x624 0x00 0x03 0x1b0b1>;
++	};
++
++	pinctrl_uart2: uart2grp {
++		fsl,pins = <0x94 0x320 0x00 0x00 0x00 0x1b0b1 0x98 0x324 0x62c 0x00 0x01 0x1b0b1 0xa0 0x32c 0x00 0x05 0x00 0x1b0b1 0x9c 0x328 0x00 0x05 0x00 0x1b0b1 0x0c 0x50 0x00 0x05 0x00 0x13069>;
++	};
++
++	pinctrl_uart2dte: uart2dtegrp {
++		fsl,pins = <0x94 0x320 0x62c 0x00 0x00 0x1b0b1 0x98 0x324 0x00 0x00 0x00 0x1b0b1 0xa0 0x32c 0x00 0x00 0x00 0x1b0b1 0x9c 0x328 0x628 0x00 0x00 0x1b0b1 0x0c 0x50 0x00 0x05 0x00 0x13069 0x108 0x394 0x00 0x05 0x00 0x13069>;
++	};
++
++	pinctrl_uart4: uart4grp {
++		fsl,pins = <0xb4 0x340 0x00 0x00 0x00 0x1b0b1 0xb8 0x344 0x63c 0x00 0x01 0x1b0b1>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <0x1bc 0x448 0x00 0x00 0x00 0x17059 0x1c0 0x44c 0x00 0x00 0x00 0x10071 0x1c4 0x450 0x00 0x00 0x00 0x17059 0x1c8 0x454 0x00 0x00 0x00 0x17059 0x1cc 0x458 0x00 0x00 0x00 0x17059 0x1d0 0x45c 0x00 0x00 0x00 0x17059 0x80 0x30c 0x00 0x05 0x00 0x17059 0x10 0x54 0x00 0x05 0x00 0x17059>;
++	};
++
++	pinctrl_usdhc2: usdhc2grp {
++		fsl,pins = <0x178 0x404 0x670 0x01 0x02 0x17059 0x17c 0x408 0x678 0x01 0x02 0x17059 0x180 0x40c 0x67c 0x01 0x02 0x17059 0x184 0x410 0x680 0x01 0x02 0x17059 0x188 0x414 0x684 0x01 0x01 0x17059 0x18c 0x418 0x688 0x01 0x02 0x17059>;
++	};
++
++	pinctrl_wdog: wdoggrp {
++		fsl,pins = <0x114 0x3a0 0x00 0x04 0x00 0x30b0>;
++	};
++
++	pinctrl_usb_otg1: usbotg1grp {
++		fsl,pins = <0x5c 0x2e8 0x4b8 0x02 0x00 0x17059>;
++	};
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1>;
++	status = "okay";
++};
++
++&uart2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart2>;
++	dmas = <&sdma 0x1b 0x04 0x00 &sdma 0x1c 0x04 0x00>;
++	dma-names = "rx", "tx";
++	cts-gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
++	rts-gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
++	status = "okay";
++
++	bluetooth {
++		compatible = "brcm,bcm4345c5";
++		shutdown-gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&uart4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart4>;
++	status = "okay";
++};
++
++&usbotg1 {
++	over-current-active-high;
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usbotg2 {
++	disable-over-current;
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usbotg1 {
++	status = "okay";
++};
++
++&usbphy1 {
++	fsl,tx-d-cal = <0x6a>;
++};
++
++&usbphy2 {
++	fsl,tx-d-cal = <0x6a>;
++};
++
++&usdhc1 {
++	#address-cells = <0x01>;
++	#size-cells = <0x00>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	assigned-clocks = <0x01 0x40 0x01 0xce>;
++	assigned-clock-parents = <0x01 0x26>;
++	assigned-clock-rates = <0x00 0x7de2900>;
++	max-frequency = <0xe4e1c0>;
++	bus-width = <0x04>;
++	mmc-pwrseq = <&sdio_pwrseq>;
++	keep-power-in-suspend;
++	cap-power-off-card;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	supports-sdio;
++	status = "okay";
++
++	wifi@1 {
++		reg = <0x01>;
++		compatible = "brcm,bcm4329-fmac";
++		interrupt-parent = <0x21>;
++		interrupts = <0x02 0x04>;
++		interrupt-names = "host-wake";
++	};
++};
++
++&usdhc2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc2>;
++	assigned-clocks = <0x01 0x41 0x01 0xcf>;
++	assigned-clock-parents = <0x01 0x26>;
++	assigned-clock-rates = <0x00 0x7de2900>;
++	bus-width = <0x04>;
++	keep-power-in-suspend;
++	status = "okay";
++};
++
++&wdog1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wdog>;
++	fsl,wdog_b;
++};
