@@ -22,6 +22,23 @@ case "$(board_name)" in
 		uci set firewall.@zone[1].network='wwan wan wan6'
 		uci commit firewall
 	;;
+	geniatech,gtw360 )
+		# create wwan zone as it is the default for scanned networks
+		uci set network.wwan='interface'
+		uci set network.wwan.proto='dhcp'
+		uci commit network
+
+		# and add wwan to wan zone in firewall
+		uci set firewall.@zone[1].network='wwan wan wan6'
+		uci commit firewall
+
+		uci delete wireless.@wifi-device[0].disabled
+		uci set wireless.@wifi-device[0].channel='1'
+		uci set wireless.@wifi-device[0].band='2g'
+		uci set wireless.@wifi-device[0].country='US'
+		uci delete wireless.@wifi-device[0].htmode
+		uci commit wireless
+	;;
 esac
 
 exit 0
