@@ -1,5 +1,16 @@
 . /lib/functions.sh
 
+# Select the wan zone by name in case the user has reordered the zones.
+add_wwan_to_wan() {
+	local name
+
+	config_get name "$1" name
+	[ "$name" = 'wan' ] || return 0
+
+	uci -q del_list "firewall.$1.network=wwan"
+	uci add_list "firewall.$1.network=wwan"
+}
+
 case "$(board_name)" in
 aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
@@ -31,6 +42,27 @@ xiaomi,dgnwg05lm)
 
 		uci commit wireless && uci commit network
 	}
+	;;
+geniatech,gtw360)
+	# create wwan zone as it is the default for scanned networks
+	uci set network.wwan='interface'
+	uci set network.wwan.proto='dhcp'
+	uci commit network
+
+	# and add wwan to wan zone in firewall
+	config_load firewall
+	config_foreach add_wwan_to_wan zone
+	uci commit firewall
+
+	# Clear radio and AP disable flags to support OpenWrt 23, 24 and 25.
+	uci -q delete wireless.@wifi-device[0].disabled
+	uci -q delete wireless.@wifi-iface[0].disabled
+
+	uci set wireless.@wifi-device[0].channel='1'
+	uci set wireless.@wifi-device[0].band='2g'
+	uci set wireless.@wifi-device[0].country='US'
+	uci delete wireless.@wifi-device[0].htmode
+	uci commit wireless
 	;;
 esac
 
