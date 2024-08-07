@@ -10,7 +10,7 @@ technexion,imx7d-pico-pi)
 	;;
 aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
-	ucidef_set_interfaces_lan "wlan0"
+	ucidef_set_interfaces_lan_wan "wlan0" "wlan1"
 	;;
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
