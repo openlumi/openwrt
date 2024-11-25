@@ -9,9 +9,11 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
 --- a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
 +++ b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.c
-@@ -15,11 +15,16 @@
+@@ -14,12 +14,18 @@
+ #include <linux/mtd/partitions.h>
  #include <linux/of.h>
  #include <linux/platform_device.h>
++#include <linux/busfreq-imx.h>
  #include <linux/pm_runtime.h>
 +#include <linux/debugfs.h>
 +#include <linux/pinctrl/consumer.h>
@@ -26,7 +28,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  /* Resource names for the GPMI NAND driver. */
  #define GPMI_NAND_GPMI_REGS_ADDR_RES_NAME  "gpmi-nand"
  #define GPMI_NAND_BCH_REGS_ADDR_RES_NAME   "bch"
-@@ -112,41 +117,14 @@
+@@ -112,7 +118,7 @@
  	return 0;
 
  error:
@@ -35,33 +37,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	return -ETIMEDOUT;
  }
 
--static int __gpmi_enable_clk(struct gpmi_nand_data *this, bool v)
--{
--	struct clk *clk;
--	int ret;
--	int i;
--
--	for (i = 0; i < GPMI_CLK_MAX; i++) {
--		clk = this->resources.clock[i];
--		if (!clk)
--			break;
--
--		if (v) {
--			ret = clk_prepare_enable(clk);
--			if (ret)
--				goto err_clk;
--		} else {
--			clk_disable_unprepare(clk);
--		}
--	}
--	return 0;
--
--err_clk:
--	for (; i > 0; i--)
--		clk_disable_unprepare(this->resources.clock[i - 1]);
--	return ret;
--}
--
+@@ -146,7 +152,7 @@
  static int gpmi_init(struct gpmi_nand_data *this)
  {
  	struct resources *r = &this->resources;
@@ -70,7 +46,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  	ret = pm_runtime_resume_and_get(this->dev);
  	if (ret < 0)
-@@ -727,11 +705,40 @@
+@@ -727,11 +733,40 @@
  	return err;
  }
 
@@ -112,7 +88,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  	ret = common_nfc_set_geometry(this);
  	if (ret)
-@@ -755,7 +762,6 @@
+@@ -755,7 +790,6 @@
  	/* Set *all* chip selects to use layout 0. */
  	writel(0, r->bch_regs + HW_BCH_LAYOUTSELECT);
 
@@ -120,7 +96,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  err_out:
  	pm_runtime_mark_last_busy(this->dev);
  	pm_runtime_put_autosuspend(this->dev);
-@@ -937,6 +943,9 @@
+@@ -937,6 +971,9 @@
  	if (GPMI_IS_MX6Q(this) || GPMI_IS_MX6SX(this))
  		clk_disable_unprepare(r->clock[0]);
 
@@ -130,7 +106,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	ret = clk_set_rate(r->clock[0], hw->clk_rate);
  	if (ret) {
  		dev_err(this->dev, "cannot set clock rate to %lu Hz: %d\n", hw->clk_rate, ret);
-@@ -983,7 +992,8 @@
+@@ -983,7 +1020,8 @@
  		return PTR_ERR(sdr);
 
  	/* Only MX28/MX6 GPMI controller can reach EDO timings */
@@ -140,7 +116,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  		return -ENOTSUPP;
 
  	/* Stop here if this call was just a check */
-@@ -1157,6 +1167,14 @@
+@@ -1157,6 +1195,14 @@
  	.clks = gpmi_clks_for_mx6,
  	.clks_count = ARRAY_SIZE(gpmi_clks_for_mx6),
  };
@@ -155,7 +131,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  static const struct gpmi_devdata gpmi_devdata_imx6sx = {
  	.type = IS_MX6SX,
-@@ -1177,6 +1195,17 @@
+@@ -1177,6 +1223,17 @@
  	.clks = gpmi_clks_for_mx7d,
  	.clks_count = ARRAY_SIZE(gpmi_clks_for_mx7d),
  };
@@ -173,33 +149,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  static int acquire_register_block(struct gpmi_nand_data *this,
  				  const char *res_name)
-@@ -1226,25 +1255,6 @@
- 		}
- }
-
--static int acquire_dma_channels(struct gpmi_nand_data *this)
--{
--	struct platform_device *pdev = this->pdev;
--	struct dma_chan *dma_chan;
--	int ret = 0;
--
--	/* request dma channel */
--	dma_chan = dma_request_chan(&pdev->dev, "rx-tx");
--	if (IS_ERR(dma_chan)) {
--		ret = dev_err_probe(this->dev, PTR_ERR(dma_chan),
--				    "DMA channel request failed\n");
--		release_dma_channels(this);
--	} else {
--		this->dma_chans[0] = dma_chan;
--	}
--
--	return ret;
--}
--
- static int gpmi_get_clks(struct gpmi_nand_data *this)
- {
- 	struct resources *r = &this->resources;
-@@ -1284,10 +1294,6 @@
+@@ -1284,10 +1341,6 @@
  	if (ret)
  		goto exit_regs;
 
@@ -210,7 +160,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	ret = gpmi_get_clks(this);
  	if (ret)
  		goto exit_clock;
-@@ -2190,7 +2196,7 @@
+@@ -2190,7 +2243,7 @@
  		 */
  		chipnr = block >> (chip->chip_shift - chip->phys_erase_shift);
  		page = block << (chip->phys_erase_shift - chip->page_shift);
@@ -219,7 +169,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  		/* Send the command to read the conventional block mark. */
  		nand_select_target(chip, chipnr);
-@@ -2262,6 +2268,11 @@
+@@ -2262,6 +2315,11 @@
  	if (ret)
  		return ret;
 
@@ -231,7 +181,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	/* Init the nand_ecc_ctrl{} */
  	ecc->read_page	= gpmi_ecc_read_page;
  	ecc->write_page	= gpmi_ecc_write_page;
-@@ -2281,7 +2292,7 @@
+@@ -2281,7 +2339,7 @@
  	 *  (1) the chip is imx6, and
  	 *  (2) the size of the ECC parity is byte aligned.
  	 */
@@ -240,7 +190,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  		((bch_geo->gf_len * bch_geo->ecc_strength) % 8) == 0) {
  		ecc->read_subpage = gpmi_ecc_read_subpage;
  		chip->options |= NAND_SUBPAGE_READ;
-@@ -2567,11 +2578,11 @@
+@@ -2567,11 +2625,11 @@
  						   &direct);
  			break;
  		}
@@ -256,7 +206,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	}
 
  	dev_dbg(this->dev, "%s setup done\n", __func__);
-@@ -2662,6 +2673,7 @@
+@@ -2662,6 +2720,7 @@
  {
  	struct nand_chip *chip = &this->nand;
  	struct mtd_info  *mtd = nand_to_mtd(chip);
@@ -264,7 +214,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	int ret;
 
  	/* init the MTD data structures */
-@@ -2692,7 +2704,12 @@
+@@ -2692,7 +2751,12 @@
  	this->base.ops = &gpmi_nand_controller_ops;
  	chip->controller = &this->base;
 
@@ -278,7 +228,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	if (ret)
  		goto err_out;
 
-@@ -2719,8 +2736,10 @@
+@@ -2719,8 +2783,10 @@
  	{ .compatible = "fsl,imx23-gpmi-nand", .data = &gpmi_devdata_imx23, },
  	{ .compatible = "fsl,imx28-gpmi-nand", .data = &gpmi_devdata_imx28, },
  	{ .compatible = "fsl,imx6q-gpmi-nand", .data = &gpmi_devdata_imx6q, },
@@ -290,7 +240,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	{}
  };
  MODULE_DEVICE_TABLE(of, gpmi_nand_id_table);
-@@ -2743,15 +2762,9 @@
+@@ -2743,15 +2809,9 @@
  	if (ret)
  		goto exit_acquire_resources;
 
@@ -307,7 +257,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 
  	ret = gpmi_init(this);
  	if (ret)
-@@ -2761,15 +2774,12 @@
+@@ -2761,15 +2821,12 @@
  	if (ret)
  		goto exit_nfc_init;
 
@@ -324,7 +274,7 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	pm_runtime_disable(&pdev->dev);
  	release_resources(this);
  exit_acquire_resources:
-@@ -2783,7 +2793,6 @@
+@@ -2783,7 +2840,6 @@
  	struct nand_chip *chip = &this->nand;
  	int ret;
 
@@ -332,76 +282,87 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
  	pm_runtime_disable(&pdev->dev);
 
  	ret = mtd_device_unregister(nand_to_mtd(chip));
-@@ -2793,69 +2802,9 @@
- 	release_resources(this);
- }
-
--#ifdef CONFIG_PM_SLEEP
--static int gpmi_pm_suspend(struct device *dev)
--{
+@@ -2796,10 +2852,12 @@
+ #ifdef CONFIG_PM_SLEEP
+ static int gpmi_pm_suspend(struct device *dev)
+ {
 -	struct gpmi_nand_data *this = dev_get_drvdata(dev);
--
++	int ret;
+
 -	release_dma_channels(this);
 -	return 0;
--}
--
--static int gpmi_pm_resume(struct device *dev)
--{
--	struct gpmi_nand_data *this = dev_get_drvdata(dev);
--	int ret;
--
++	pinctrl_pm_select_sleep_state(dev);
++	ret = pm_runtime_force_suspend(dev);
++
++	return ret;
+ }
+
+ static int gpmi_pm_resume(struct device *dev)
+@@ -2807,9 +2865,13 @@
+ 	struct gpmi_nand_data *this = dev_get_drvdata(dev);
+ 	int ret;
+
 -	ret = acquire_dma_channels(this);
 -	if (ret < 0)
--		return ret;
--
--	/* re-init the GPMI registers */
--	ret = gpmi_init(this);
--	if (ret) {
--		dev_err(this->dev, "Error setting GPMI : %d\n", ret);
--		return ret;
--	}
--
--	/* Set flag to get timing setup restored for next exec_op */
--	if (this->hw.clk_rate)
--		this->hw.must_apply_timings = true;
--
--	/* re-init the BCH registers */
--	ret = bch_set_geometry(this);
--	if (ret) {
--		dev_err(this->dev, "Error setting BCH : %d\n", ret);
--		return ret;
--	}
--
--	return 0;
--}
--#endif /* CONFIG_PM_SLEEP */
--
++	ret = pm_runtime_force_resume(dev);
++	if (ret) {
++		dev_err(this->dev, "Error in resume %d\n", ret);
+ 		return ret;
++	}
++
++	pinctrl_pm_select_default_state(dev);
+
+ 	/* re-init the GPMI registers */
+ 	ret = gpmi_init(this);
+@@ -2829,22 +2891,44 @@
+ 		return ret;
+ 	}
+
++	/* re-apply the timing setting */
++	this->hw.must_apply_timings = true;
++
+ 	return 0;
+ }
+ #endif /* CONFIG_PM_SLEEP */
+
 -static int __maybe_unused gpmi_runtime_suspend(struct device *dev)
--{
--	struct gpmi_nand_data *this = dev_get_drvdata(dev);
--
++#define gpmi_enable_clk(x)	__gpmi_enable_clk(x, true)
++#define gpmi_disable_clk(x)	__gpmi_enable_clk(x, false)
++
++static int gpmi_runtime_suspend(struct device *dev)
+ {
+ 	struct gpmi_nand_data *this = dev_get_drvdata(dev);
+
 -	return __gpmi_enable_clk(this, false);
--}
--
++	gpmi_disable_clk(this);
++	release_bus_freq(BUS_FREQ_HIGH);
++	release_dma_channels(this);
++
++	return 0;
+ }
+
 -static int __maybe_unused gpmi_runtime_resume(struct device *dev)
--{
--	struct gpmi_nand_data *this = dev_get_drvdata(dev);
--
++static int gpmi_runtime_resume(struct device *dev)
+ {
+ 	struct gpmi_nand_data *this = dev_get_drvdata(dev);
++	int ret;
++
++	ret = gpmi_enable_clk(this);
++	if (ret)
++		return ret;
++
++	request_bus_freq(BUS_FREQ_HIGH);
++
++	ret = acquire_dma_channels(this);
++	if (ret < 0)
++		return ret;
+
 -	return __gpmi_enable_clk(this, true);
--}
--
--static const struct dev_pm_ops gpmi_pm_ops = {
--	SET_SYSTEM_SLEEP_PM_OPS(gpmi_pm_suspend, gpmi_pm_resume)
--	SET_RUNTIME_PM_OPS(gpmi_runtime_suspend, gpmi_runtime_resume, NULL)
--};
--
- static struct platform_driver gpmi_nand_driver = {
- 	.driver = {
- 		.name = "gpmi-nand",
--		.pm = &gpmi_pm_ops,
- 		.of_match_table = gpmi_nand_id_table,
- 	},
- 	.probe   = gpmi_nand_probe,
++	return 0;
++
+ }
+
+ static const struct dev_pm_ops gpmi_pm_ops = {
 --- a/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.h
 +++ b/drivers/mtd/nand/raw/gpmi-nand/gpmi-nand.h
 @@ -76,8 +76,12 @@
@@ -432,3 +393,83 @@ Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
 +#define GPMI_IS_MX8(x)		(GPMI_IS_MX8QXP(x))
  #define GPMI_IS_MXS(x)		(GPMI_IS_MX23(x) || GPMI_IS_MX28(x))
  #endif
+--- /dev/null
++++ b/include/linux/busfreq-imx.h
+@@ -0,0 +1,77 @@
++/*
++ * Copyright 2012-2016 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef __ASM_ARCH_MXC_BUSFREQ_H__
++#define __ASM_ARCH_MXC_BUSFREQ_H__
++
++#include <linux/notifier.h>
++#include <linux/regulator/consumer.h>
++
++/*
++ * This enumerates busfreq low power mode entry and exit.
++ */
++enum busfreq_event {
++	LOW_BUSFREQ_ENTER,
++	LOW_BUSFREQ_EXIT,
++};
++
++/*
++ * This enumerates the system bus and ddr frequencies in various modes.
++ * BUS_FREQ_HIGH - DDR @ 528MHz, AHB @ 132MHz.
++ * BUS_FREQ_MED - DDR @ 400MHz, AHB @ 132MHz
++ * BUS_FREQ_AUDIO - DDR @ 50MHz/100MHz, AHB @ 24MHz.
++ * BUS_FREQ_LOW  - DDR @ 24MHz, AHB @ 24MHz.
++ * BUS_FREQ_ULTRA_LOW - DDR @ 1MHz, AHB - 3MHz.
++ *
++ * Drivers need to request/release the bus/ddr frequencies based on
++ * their performance requirements. Drivers cannot request/release
++ * BUS_FREQ_ULTRA_LOW mode as this mode is automatically entered from
++ * either BUS_FREQ_AUDIO or BUS_FREQ_LOW
++ * modes.
++ */
++enum bus_freq_mode {
++	BUS_FREQ_HIGH,
++	BUS_FREQ_MED,
++	BUS_FREQ_AUDIO,
++	BUS_FREQ_LOW,
++	BUS_FREQ_ULTRA_LOW,
++};
++
++#if defined(CONFIG_HAVE_IMX_BUSFREQ) && !defined(CONFIG_ARM64)
++extern struct regulator *arm_reg;
++extern struct regulator *soc_reg;
++void request_bus_freq(enum bus_freq_mode mode);
++void release_bus_freq(enum bus_freq_mode mode);
++int register_busfreq_notifier(struct notifier_block *nb);
++int unregister_busfreq_notifier(struct notifier_block *nb);
++int get_bus_freq_mode(void);
++#elif defined(CONFIG_HAVE_IMX_BUSFREQ)
++void request_bus_freq(enum bus_freq_mode mode);
++void release_bus_freq(enum bus_freq_mode mode);
++int get_bus_freq_mode(void);
++#else
++static inline void request_bus_freq(enum bus_freq_mode mode)
++{
++}
++static inline void release_bus_freq(enum bus_freq_mode mode)
++{
++}
++static inline int register_busfreq_notifier(struct notifier_block *nb)
++{
++	return 0;
++}
++static inline int unregister_busfreq_notifier(struct notifier_block *nb)
++{
++	return 0;
++}
++static inline int get_bus_freq_mode(void)
++{
++	return BUS_FREQ_HIGH;
++}
++#endif
++#endif
