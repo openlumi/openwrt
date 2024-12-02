@@ -160,8 +160,8 @@ Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
 +	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
 +	status = "okay";
 +	nand-on-flash-bbt;
++	#size-cells = <1>;
 +};
-+
 +&uart1 {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&pinctrl_uart1>;
