@@ -7,10 +7,10 @@ PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openlumi/rtl8723bs.git
-PKG_MIRROR_HASH:=246d2f9125e7c964af6f26ed6e9023190901b32b2364412d3b302652c69cabeb
+PKG_MIRROR_HASH:=110a2cd301dcd5131700ba8aff8344f6fe54cdf95955c6a615bb91e9aeeb4da2
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2023-06-13
-PKG_SOURCE_VERSION:=04a0bd2edd1ca95b30f8ff47f59624e1277fadf1
+PKG_SOURCE_VERSION:=d500e58db9191b6e4054f37563e9111c7ac0c1e8
 
 PKG_MAINTAINER:=Ivan Belokobylskiy <belokobylskij@gmail.com>
 PKG_BUILD_PARALLEL:=1
@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/rtl8723bs-ol
   SUBMENU:=Wireless Drivers
   TITLE:=Realtek RTL8723BS SDIO WiFi support (out-of-tree)
-  DEPENDS:=+kmod-mac80211 +kmod-cfg80211 +@DRIVER_11N_SUPPORT
+  DEPENDS:=+kmod-mac80211 +kmod-cfg80211 +kmod-mmc +@DRIVER_11N_SUPPORT
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8723bs.ko
   AUTOLOAD:=$(call AutoProbe,rtl8723bs)
