@@ -25,7 +25,7 @@ define Device/geniatech_gtw360
   KERNEL := kernel-bin | fit none $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_SUFFIX := -zImage
   DEVICE_PACKAGES := kmod-brcmfmac kmod-button-hotplug kmod-input-gpio-keys \
-    kmod-leds-gpio kmod-pps-gpio kmod-fs-vfat \
+    kmod-leds-gpio kmod-pps-gpio kmod-fs-vfat kmod-phy-micrel \
     broadcom-43455-fmac broadcom-4345C0-hci \
     wpa-supplicant ca-certificates hostapd \
     kmod-bluetooth bluez-daemon bluez-libs bluez-utils
