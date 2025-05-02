@@ -1,9 +1,9 @@
 --- a/os_dep/linux/os_intfs.c
 +++ b/os_dep/linux/os_intfs.c
-@@ -1649,6 +1649,13 @@
-
+@@ -1956,6 +1956,13 @@ void rtw_os_ndev_unregister(_adapter *ad
+ 
  	netdev = adapter->pnetdev;
-
+ 
 +#if defined(RTW_SINGLE_WIPHY)
 +/*
 +  For concurrent mode deleting interface make kernel hangs.
@@ -14,10 +14,10 @@
  #if defined(CONFIG_IOCTL_CFG80211)
  	rtw_cfg80211_ndev_res_unregister(adapter);
  #endif
-@@ -1670,6 +1677,8 @@
+@@ -1977,6 +1984,8 @@ void rtw_os_ndev_unregister(_adapter *ad
  	rtw_wiphy_unregister(adapter_to_wiphy(adapter));
  #endif
-
+ 
 +#endif /* defined(RTW_SINGLE_WIPHY) */
 +
  #ifdef CONFIG_RTW_NAPI
