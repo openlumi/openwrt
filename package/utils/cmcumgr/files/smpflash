@@ -1,0 +1,56 @@
+#!/bin/sh
+
+PORT="${PORT:-/dev/ttymxc3}"
+BAUDRATE="${BAUDRATE:-1000000}"
+MCUBOOT_PIN=132
+RESET_PIN_NAME="zigbee-reset"
+
+if [ $# != 1 ]
+then
+    echo "Error: Invalid arguments"
+    echo "    To flash the firmware"
+    echo "        ${0} <Firmware_File>"
+    exit 1
+fi
+
+if [ ! -f "$1" ]
+then
+    echo "Error: Update File $1 does not exist"
+    exit 1
+fi
+
+FIRMWARE="$1"
+shift
+
+# Put nrf52840 mcuboot-button0 pin to low
+if [ ! -f "/sys/class/gpio/gpio$MCUBOOT_PIN/direction" ]
+then
+	echo $MCUBOOT_PIN > /sys/class/gpio/export
+fi
+echo out > /sys/class/gpio/gpio$MCUBOOT_PIN/direction
+echo 0 > /sys/class/gpio/gpio$MCUBOOT_PIN/value
+
+# Now reset nrf52840 to put in bootloader SMP mode
+echo 0 > /sys/class/gpio/$RESET_PIN_NAME/value
+sleep 1
+echo 1 > /sys/class/gpio/$RESET_PIN_NAME/value
+sleep 1
+
+# Now Flash the firmware
+# Call the flasher program
+echo Flash $FIRMWARE
+cmcumgr -t 2 --retries 4 -s dev=$PORT,baud=$BAUDRATE image upload $FIRMWARE $@
+result=$?
+
+sleep 1
+
+# Put nrf52840 mcuboot-button0 pin to High
+echo 1 > /sys/class/gpio/gpio$MCUBOOT_PIN/value
+sleep 1
+# Now reset nrf52840 to put in running mode
+echo 0 > /sys/class/gpio/$RESET_PIN_NAME/value
+sleep 1
+echo 1 > /sys/class/gpio/$RESET_PIN_NAME/value
+sleep 1
+
+exit $result
