@@ -1,0 +1,67 @@
+--- a/src/cli/cli_opts.c
++++ b/src/cli/cli_opts.c
+@@ -543,7 +543,7 @@ int parse_cli_options(int argc, char *co
+     copts->argv = argv;
+     opterr = 0;
+     copts->prgname = argv[0];
+-    copts->timeout = 3;
++    copts->timeout = 1;
+ 
+     return parse_mcumgr_options(copts);
+ }
+--- a/src/mcumgr-client/commands/cmd_common.c
++++ b/src/mcumgr-client/commands/cmd_common.c
+@@ -19,6 +19,9 @@ int cmd_run(struct smp_transport *transp
+         rc = transport->ops->write(transport, buf, reqsz);
+ 
+         /* TODO: try reconnecting ?*/
++        if (rc == -ETIMEDOUT) {
++            continue;
++        }
+         if (rc < 0) {
+             return rc;
+         }
+--- a/src/mcumgr-client/transport/serial/smp_serial.c
++++ b/src/mcumgr-client/transport/serial/smp_serial.c
+@@ -362,7 +362,7 @@ static int serial_transport_read(struct
+     DBG("Read: maxlen: %zu\n", maxlen);
+ 
+     now = time_get();
+-    end_time = now + tmo + 2;
++    end_time = now + tmo;
+ 
+     while (1) {
+         /* read no more than buffers allow, and never more than one frame data
+--- a/src/cli/main.c
++++ b/src/cli/main.c
+@@ -403,6 +403,7 @@ main(int argc, char **argv)
+         }
+         transport.verbose = copts.verbose;
+         transport.timeout = copts.timeout;
++        transport.retries = copts.retries;
+     }
+ 
+     if (copts.subcmd != CMD_IMAGE_INFO) {
+--- a/src/mcumgr-client/commands/cmd_img.c
++++ b/src/mcumgr-client/commands/cmd_img.c
+@@ -238,6 +238,7 @@ int cmd_img_run_image_upload(struct smp_
+         fprintf(stderr, "Upload continue\n");
+     }
+ 
++    int errors = 0;
+     while (state.offs < req->image.file_sz) {
+ 
+         size_t seglen;
+@@ -295,6 +296,12 @@ int cmd_img_run_image_upload(struct smp_
+         }
+ 
+         if (state.offs <= old_off) {
++            errors ++;
++        } else {
++            errors = 0;
++        }
++
++        if (state.offs <= old_off && errors >= 10) {
+             fprintf(stderr, "FW upload stall\n");
+             return -EPROTO;
+         }
