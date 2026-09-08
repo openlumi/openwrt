@@ -4,11 +4,11 @@
 echo 30000 >  /proc/sys/vm/min_free_kbytes
 echo 2 >/proc/sys/kernel/printk
 echo -e "\033[9;0]" > /dev/tty0
-if [ /sys/bus/platform/drivers/imx_busfreq/soc\:busfreq ]; then
+if [ -e /sys/bus/platform/drivers/imx_busfreq/soc\:busfreq ]; then
   echo 0 > /sys/bus/platform/drivers/imx_busfreq/soc\:busfreq/enable
 fi
 
-if [ -f /etc/asound.state ]; then
+if [ -f /etc/asound.state -a -x /usr/sbin/alsactl ]; then
   /usr/sbin/alsactl -f /etc/asound.state restore
 fi
 
