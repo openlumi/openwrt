@@ -95,9 +95,9 @@ NOSTDINC_FLAGS := \
 	-Wno-error=empty-body
 
 # The fork selects mac80211 API variants by LINUX_VERSION_CODE, but we build
-# against mac80211 backports (6.18 API) on a 6.12 kernel. Make the checks see
+# against mac80211 backports (6.12 API) on a 6.6 kernel. Make the checks see
 # the backports version everywhere except tx.c, whose only check (>= 6.16)
-# is about timer_container_of(), a generic kernel API that 6.12 lacks.
+# is about timer_container_of(), a generic kernel API that the 6.6 kernel lacks.
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) ./files/Kbuild $(PKG_BUILD_DIR)/Kbuild
