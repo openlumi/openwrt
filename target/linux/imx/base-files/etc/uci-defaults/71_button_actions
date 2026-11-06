@@ -42,7 +42,8 @@ case "$(board_name)" in
 {
     rm -f /etc/config/network
     /bin/config_generate generate_static_network
-    uci set network.@device[0].ports='wlan0'
+    uci delete network.@device[0].ports
+    uci set network.@device[0].bridge_empty='1'
     uci set network.wwan='interface'
     uci set network.wwan.proto='dhcp'
     uci commit network
@@ -50,11 +51,10 @@ case "$(board_name)" in
     rm -f /etc/config/wireless
     wifi config
     uci delete wireless.@wifi-device[0].disabled
-    uci delete wireless.@wifi-device[-1].disabled
-    uci set wireless.@wifi-iface[-1].network='wwan'
-    uci set wireless.@wifi-iface[-1].mode='sta'
-    uci set wireless.@wifi-iface[-1].ssid='$0102030405$'
-    uci delete wireless.@wifi-iface[-1].encryption
+    uci delete wireless.@wifi-iface[0].disabled
+    uci set wireless.@wifi-device[0].channel='1'
+    uci set wireless.@wifi-device[0].band='2g'
+    uci set wireless.@wifi-device[0].country='US'
     uci commit wireless
     ubus call network restart
     for i in 1 2 3
@@ -103,6 +103,7 @@ EOF
     rm -f /etc/config/wireless
     wifi config
     uci delete wireless.@wifi-device[0].disabled
+    uci delete wireless.@wifi-iface[0].disabled
     uci set wireless.@wifi-device[0].channel='1'
     uci set wireless.@wifi-device[0].band='2g'
     uci set wireless.@wifi-device[0].country='US'
