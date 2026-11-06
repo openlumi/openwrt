@@ -24,6 +24,7 @@ define Package/rtk_hciattach
 	SECTION:=utils
 	CATEGORY:=Utilities
 	TITLE:=rtk_hciattach bluetooth setup for rtl8723bs_bt
+	DEPENDS:=+kmod-hci-uart
 endef
 
 define Package/rtk_hciattach/description
