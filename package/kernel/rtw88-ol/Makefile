@@ -95,15 +95,14 @@ NOSTDINC_FLAGS := \
 	-Wno-error=empty-body
 
 # The fork selects mac80211 API variants by LINUX_VERSION_CODE, but we build
-# against mac80211 backports (6.18 API) on a 6.12 kernel. Make the checks see
-# the backports version everywhere except tx.c, whose only check (>= 6.16)
-# is about timer_container_of(), a generic kernel API that 6.12 lacks.
+# against mac80211 backports (6.1 API) on a 5.15 kernel. Make all the checks
+# see the backports version; this also selects the right generic kernel API
+# (e.g. from_timer() in tx.c) since 6.1 and 5.15 agree on those.
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(CP) ./files/Kbuild $(PKG_BUILD_DIR)/Kbuild
+	$(CP) ./files/Kbuild ./files/rtw_compat_guard.h $(PKG_BUILD_DIR)/
 	find $(PKG_BUILD_DIR) -maxdepth 1 \( -name '*.c' -o -name '*.h' \) \
-		! -name tx.c -exec \
-		$(SED) 's/\<LINUX_VERSION_CODE\>/RTW_KERNEL_VERSION_CODE/g' {} +
+		-exec $(SED) 's/\<LINUX_VERSION_CODE\>/RTW_KERNEL_VERSION_CODE/g' {} +
 endef
 
 define Build/Compile
