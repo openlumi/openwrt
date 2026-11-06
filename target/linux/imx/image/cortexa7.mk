@@ -73,7 +73,7 @@ define Device/xiaomi_dgnwg05lm
   $(Device/xiaomi_gateway-lumi)
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := DGNWG05LM
-  DEVICE_PACKAGES += kmod-rtw88-8723bs \
+  DEVICE_PACKAGES += kmod-rtw88-8723bs rtk_hciattach \
 	kmod-bluetooth bluez-daemon bluez-libs bluez-utils
   DEVICE_DTS := \
 	imx6ull-xiaomi-dgnwg05lm
