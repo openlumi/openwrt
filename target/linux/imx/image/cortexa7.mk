@@ -74,7 +74,7 @@ define Device/xiaomi_dgnwg05lm
   $(Device/xiaomi_gateway-lumi)
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := DGNWG05LM
-  DEVICE_PACKAGES += kmod-rtl8723bs-ol \
+  DEVICE_PACKAGES += kmod-rtw88-8723bs \
 	kmod-bluetooth bluez-daemon bluez-libs bluez-utils
   DEVICE_DTS := \
 	imx6ull-xiaomi-dgnwg05lm
@@ -85,7 +85,7 @@ define Device/aqara_zhwg11lm
   $(Device/xiaomi_gateway-lumi)
   DEVICE_VENDOR := Aqara
   DEVICE_MODEL := ZHWG11LM
-  DEVICE_PACKAGES += kmod-rtl8189es-ol
+  DEVICE_PACKAGES += kmod-rtw88-8189es
   DEVICE_DTS := \
 	imx6ull-aqara-zhwg11lm
 endef
