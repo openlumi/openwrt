@@ -3,19 +3,22 @@
 case "$(board_name)" in
 	aqara,zhwg11lm |\
 	xiaomi,dgnwg05lm )
-		# multi if version
-		uci delete wireless.@wifi-device[0].disabled
-		uci delete wireless.@wifi-device[-1].disabled
+		# Only the access point is started on a fresh install, so that
+		# the user can connect and join an uplink network from LuCI
+		# (Network -> Wireless -> Scan). The STA is added by LuCI as
+		# a second wifi-iface of the same radio (rtw88 supports AP+STA).
 		uci delete wireless.@wifi-iface[0].disabled
-		uci delete wireless.@wifi-iface[-1].disabled
-		uci set wireless.@wifi-iface[-1].network='wwan'
-		uci set wireless.@wifi-iface[-1].mode='sta'
-		uci set wireless.@wifi-iface[-1].ssid='$0102030405$'
-		uci delete wireless.@wifi-iface[-1].encryption
+		uci set wireless.@wifi-device[0].channel='1'
+		uci set wireless.@wifi-device[0].band='2g'
+		uci set wireless.@wifi-device[0].country='US'
 		uci commit wireless
 
-		# create wwan zone as it is the default for scanned networks
-		uci set network.@device[0].ports='wlan0'
+		# The AP vif is attached to br-lan by netifd (network=lan), so it
+		# must not be listed as a bridge port; keep the bridge up on its own.
+		uci delete network.@device[0].ports
+		uci set network.@device[0].bridge_empty='1'
+
+		# create wwan interface as it is the default for scanned networks
 		uci set network.wwan='interface'
 		uci set network.wwan.proto='dhcp'
 		uci commit network
