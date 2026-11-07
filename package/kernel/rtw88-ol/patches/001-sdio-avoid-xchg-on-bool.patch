@@ -1,0 +1,14 @@
+diff --git a/sdio.h b/sdio.h
+index 0056394..ed146ed 100644
+--- a/sdio.h
++++ b/sdio.h
+@@ -175,7 +175,8 @@ struct rtw_sdio_tx_data {
+ struct rtw_sdio_work_data {
+ 	struct delayed_work work;
+ 	struct rtw_dev *rtwdev;
+-	bool waiting_for_irq;
++	/* xchg() on 1-byte types needs __xchg_small, not exported on MIPS */
++	u32 waiting_for_irq;
+ };
+ 
+ struct rtw_sdio {
