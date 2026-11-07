@@ -40,6 +40,8 @@ case "$(board_name)" in
 		cat << "EOF" > /usr/bin/reset_wifi_config
 #!/bin/sh
 {
+    mac1="$(ucode /usr/share/hostap/wdev.uc phy0 get_macaddr id=1)" || exit 1
+
     rm -f /etc/config/network
     /bin/config_generate generate_static_network
     uci delete network.@device[0].ports
@@ -55,6 +57,7 @@ case "$(board_name)" in
     uci set wireless.@wifi-device[0].channel='1'
     uci set wireless.@wifi-device[0].band='2g'
     uci set wireless.@wifi-device[0].country='US'
+    uci set "wireless.@wifi-iface[0].macaddr=$mac1"
     uci commit wireless
     ubus call network restart
     for i in 1 2 3
