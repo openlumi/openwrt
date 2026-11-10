@@ -15,12 +15,7 @@ geniatech,gtw360)
 	;;
 aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
-	# Wi-Fi only (rtw88, single phy), so there is no wan device. The AP vif
-	# (phy0-ap0) is attached to br-lan by netifd and the STA vif (phy0-sta0)
-	# is added later via LuCI into the wwan network. phy0-ap0 only serves to
-	# make config_generate create br-lan; uci-defaults drop it from the
-	# bridge ports and set bridge_empty (see 70_start_ap).
-	ucidef_set_interface_lan "phy0-ap0"
+	# do nothing
 	;;
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
