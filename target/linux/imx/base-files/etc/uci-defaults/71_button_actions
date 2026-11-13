@@ -1,39 +1,19 @@
 . /lib/functions.sh
 
-touch /usr/bin/reset_wifi_config
-chmod +x /usr/bin/reset_wifi_config
-touch /usr/bin/reset_overlay
-chmod +x /usr/bin/reset_overlay
+# Remove old anonymous bindings to the reset scripts.
+remove_old_reset_button() {
+	local section="$1" handler
 
-mkdir -p /etc/hotplug.d/button
-cat << "EOF" > /etc/hotplug.d/button/00-button
-source /lib/functions.sh
-
-do_button () {
-    local button
-    local action
-    local handler
-    local min
-    local max
-
-    config_get button "${1}" button
-    config_get action "${1}" action
-    config_get handler "${1}" handler
-    config_get min "${1}" min
-    config_get max "${1}" max
-
-    [ "${ACTION}" = "${action}" -a "${BUTTON}" = "${button}" -a -n "${handler}" ] && {
-        [ -z "${min}" -o -z "${max}" ] && eval ${handler}
-        [ -n "${min}" -a -n "${max}" ] && {
-            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && eval ${handler}
-        }
-    }
+	config_get handler "$section" handler
+	case "$handler" in
+		/usr/bin/reset_wifi_config|/usr/bin/reset_overlay)
+			uci -q show system | grep -Fqx "system.$section=button" ||
+				uci -q delete "system.$section"
+			;;
+	esac
 }
 
-config_load system
-config_foreach do_button button
-EOF
-
+# Create board-specific reset scripts.
 case "$(board_name)" in
 aqara,zhwg11lm|\
 xiaomi,dgnwg05lm)
@@ -132,6 +112,7 @@ geniatech,gtw360)
 		sleep 1
 	done
 	EOF
+
 	cat > /usr/bin/reset_overlay <<-'EOF'
 	#!/bin/sh
 
@@ -147,20 +128,63 @@ geniatech,gtw360)
 	reboot
 	EOF
 	;;
+*)
+	exit 0
+	;;
 esac
 
-uci add system button
-uci set system.@button[-1].button="BTN_0"
-uci set system.@button[-1].action="released"
-uci set system.@button[-1].min="8"
-uci set system.@button[-1].max="14"
-uci set system.@button[-1].handler="/usr/bin/reset_wifi_config"
-uci add system button
-uci set system.@button[-1].button="BTN_0"
-uci set system.@button[-1].action="released"
-uci set system.@button[-1].min="16"
-uci set system.@button[-1].max="25"
-uci set system.@button[-1].handler="/usr/bin/reset_overlay"
+chmod +x /usr/bin/reset_wifi_config /usr/bin/reset_overlay
+
+# Install a hotplug handler for button bindings in /etc/config/system.
+mkdir -p /etc/hotplug.d/button
+cat > /etc/hotplug.d/button/00-button <<'EOF'
+source /lib/functions.sh
+
+do_button() {
+	local button
+	local action
+	local handler
+	local min
+	local max
+
+	config_get button "${1}" button
+	config_get action "${1}" action
+	config_get handler "${1}" handler
+	config_get min "${1}" min
+	config_get max "${1}" max
+
+	[ "${ACTION}" = "${action}" -a "${BUTTON}" = "${button}" -a -n "${handler}" ] && {
+		[ -z "${min}" -o -z "${max}" ] && eval ${handler}
+		[ -n "${min}" -a -n "${max}" ] && {
+			[ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && eval ${handler}
+		}
+	}
+}
+
+config_load system
+config_foreach do_button button
+EOF
+
+config_load system
+config_foreach remove_old_reset_button button
+
+# Use named sections to avoid duplicate bindings on upgrades.
+uci batch <<-'EOF'
+	set system.reset_wifi='button'
+	set system.reset_wifi.button='BTN_0'
+	set system.reset_wifi.action='released'
+	set system.reset_wifi.min='8'
+	set system.reset_wifi.max='14'
+	set system.reset_wifi.handler='/usr/bin/reset_wifi_config'
+
+	set system.reset_overlay='button'
+	set system.reset_overlay.button='BTN_0'
+	set system.reset_overlay.action='released'
+	set system.reset_overlay.min='16'
+	set system.reset_overlay.max='25'
+	set system.reset_overlay.handler='/usr/bin/reset_overlay'
+EOF
+
 uci commit system
 
 exit 0
