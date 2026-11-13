@@ -83,25 +83,23 @@ xiaomi,dgnwg05lm)
 	done
 	EOF
 
-	cat << "EOF" > /usr/bin/reset_overlay
-#!/bin/sh
-{
-    rm -rf /overlay/upper/.* /overlay/upper/*
+	cat > /usr/bin/reset_overlay <<-'EOF'
+	#!/bin/sh
 
-    for i in 1 2 3
-    do
-        echo 180 > /sys/class/leds/red/brightness
-        echo 0 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-        echo 0 > /sys/class/leds/red/brightness
-        echo 0 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-    done
-    reboot
-}
-EOF
+	firstboot -y || exit 1
+
+	# Blink red three times after resetting the overlay.
+	echo 0 > /sys/class/leds/green/brightness
+	echo 0 > /sys/class/leds/blue/brightness
+	for i in 1 2 3; do
+		echo 180 > /sys/class/leds/red/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/red/brightness
+		sleep 1
+	done
+
+	reboot
+	EOF
 	;;
 geniatech,gtw360)
 	cat > /usr/bin/reset_wifi_config <<-'EOF'
@@ -134,21 +132,20 @@ geniatech,gtw360)
 		sleep 1
 	done
 	EOF
-	cat << "EOF" > /usr/bin/reset_overlay
-#!/bin/sh
-{
-    rm -rf /overlay/upper/.* /overlay/upper/*
+	cat > /usr/bin/reset_overlay <<-'EOF'
+	#!/bin/sh
 
-    for i in 1 2 3
-    do
-        echo 100 > /sys/class/leds/blue/brightness
-        sleep 1
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-    done
-    reboot
-}
-EOF
+	firstboot -y || exit 1
+
+	for i in 1 2 3; do
+		echo 100 > /sys/class/leds/blue/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/blue/brightness
+		sleep 1
+	done
+
+	reboot
+	EOF
 	;;
 esac
 
