@@ -1,14 +1,21 @@
 . /lib/functions.sh
 
+# Select the wan zone by name in case the user has reordered the zones.
+set_wan_input() {
+	local name
+
+	config_get name "$1" name
+	[ "$name" = 'wan' ] &&
+		uci set "firewall.$1.input=ACCEPT"
+}
+
 case "$(board_name)" in
-	aqara,zhwg11lm |\
-	geniatech,gtw360 | \
-	xiaomi,dgnwg05lm )
-    uci -q batch <<-EOF >/dev/null
-set firewall.@zone[0].input='ACCEPT'
-set firewall.@zone[1].input='ACCEPT'
-EOF
-    uci commit firewall
+aqara,zhwg11lm|\
+geniatech,gtw360|\
+xiaomi,dgnwg05lm)
+	config_load firewall
+	config_foreach set_wan_input zone
+	uci commit firewall
 	;;
 esac
 
