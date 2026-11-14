@@ -1,156 +1,190 @@
 . /lib/functions.sh
 
-touch /usr/bin/reset_wifi_config
-chmod +x /usr/bin/reset_wifi_config
-touch /usr/bin/reset_overlay
-chmod +x /usr/bin/reset_overlay
+# Remove old anonymous bindings to the reset scripts.
+remove_old_reset_button() {
+	local section="$1" handler
 
+	config_get handler "$section" handler
+	case "$handler" in
+		/usr/bin/reset_wifi_config|/usr/bin/reset_overlay)
+			uci -q show system | grep -Fqx "system.$section=button" ||
+				uci -q delete "system.$section"
+			;;
+	esac
+}
+
+# Create board-specific reset scripts.
+case "$(board_name)" in
+aqara,zhwg11lm|\
+xiaomi,dgnwg05lm)
+	cat > /usr/bin/reset_wifi_config <<-'EOF'
+	#!/bin/sh
+
+	rm -f /etc/config/network /etc/config/wireless
+	config_generate
+	wifi config
+
+	# Without Ethernet ports, config_generate skips LAN.
+	# Create LAN and br-lan here for the setup AP.
+	uci batch <<-'UCI_NETWORK'
+		set network.br_lan='device'
+		set network.br_lan.name='br-lan'
+		set network.br_lan.type='bridge'
+		set network.br_lan.bridge_empty='1'
+
+		set network.lan='interface'
+		set network.lan.device='br-lan'
+		set network.lan.proto='static'
+		add_list network.lan.ipaddr='192.168.1.1/24'
+	UCI_NETWORK
+	[ -e /proc/sys/net/ipv6 ] && uci set network.lan.ip6assign='60'
+
+	# Clear radio and AP disable flags to support OpenWrt 23, 24 and 25.
+	uci -q delete wireless.@wifi-device[0].disabled
+	uci -q delete wireless.@wifi-iface[0].disabled
+
+	# Give the AP an additional MAC to keep the base MAC for the STA.
+	mac1="$(ucode /usr/share/hostap/wdev.uc phy0 get_macaddr id=1)" &&
+		uci set "wireless.@wifi-iface[0].macaddr=$mac1"
+
+	uci commit network
+	uci commit wireless
+	ubus call network restart
+
+	# Blink yellow three times after resetting the network.
+	echo 0 > /sys/class/leds/blue/brightness
+	for i in 1 2 3; do
+		echo 128 > /sys/class/leds/red/brightness
+		echo 128 > /sys/class/leds/green/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/red/brightness
+		echo 0 > /sys/class/leds/green/brightness
+		sleep 1
+	done
+	EOF
+
+	cat > /usr/bin/reset_overlay <<-'EOF'
+	#!/bin/sh
+
+	firstboot -y || exit 1
+
+	# Blink red three times after resetting the overlay.
+	echo 0 > /sys/class/leds/green/brightness
+	echo 0 > /sys/class/leds/blue/brightness
+	for i in 1 2 3; do
+		echo 180 > /sys/class/leds/red/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/red/brightness
+		sleep 1
+	done
+
+	reboot
+	EOF
+	;;
+geniatech,gtw360)
+	cat > /usr/bin/reset_wifi_config <<-'EOF'
+	#!/bin/sh
+
+	rm -f /etc/config/network /etc/config/wireless
+	config_generate
+	wifi config
+
+	uci set network.wwan='interface'
+	uci set network.wwan.proto='dhcp'
+
+	# Clear radio and AP disable flags to support OpenWrt 23, 24 and 25.
+	uci -q delete wireless.@wifi-device[0].disabled
+	uci -q delete wireless.@wifi-iface[0].disabled
+
+	uci set wireless.@wifi-device[0].channel='1'
+	uci set wireless.@wifi-device[0].band='2g'
+	uci set wireless.@wifi-device[0].country='US'
+	uci delete wireless.@wifi-device[0].htmode
+
+	uci commit network
+	uci commit wireless
+	ubus call network restart
+
+	for i in 1 2 3; do
+		echo 100 > /sys/class/leds/amber/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/amber/brightness
+		sleep 1
+	done
+	EOF
+
+	cat > /usr/bin/reset_overlay <<-'EOF'
+	#!/bin/sh
+
+	firstboot -y || exit 1
+
+	for i in 1 2 3; do
+		echo 100 > /sys/class/leds/blue/brightness
+		sleep 1
+		echo 0 > /sys/class/leds/blue/brightness
+		sleep 1
+	done
+
+	reboot
+	EOF
+	;;
+*)
+	exit 0
+	;;
+esac
+
+chmod +x /usr/bin/reset_wifi_config /usr/bin/reset_overlay
+
+# Install a hotplug handler for button bindings in /etc/config/system.
 mkdir -p /etc/hotplug.d/button
-cat << "EOF" > /etc/hotplug.d/button/00-button
+cat > /etc/hotplug.d/button/00-button <<'EOF'
 source /lib/functions.sh
 
-do_button () {
-    local button
-    local action
-    local handler
-    local min
-    local max
+do_button() {
+	local button
+	local action
+	local handler
+	local min
+	local max
 
-    config_get button "${1}" button
-    config_get action "${1}" action
-    config_get handler "${1}" handler
-    config_get min "${1}" min
-    config_get max "${1}" max
+	config_get button "${1}" button
+	config_get action "${1}" action
+	config_get handler "${1}" handler
+	config_get min "${1}" min
+	config_get max "${1}" max
 
-    [ "${ACTION}" = "${action}" -a "${BUTTON}" = "${button}" -a -n "${handler}" ] && {
-        [ -z "${min}" -o -z "${max}" ] && eval ${handler}
-        [ -n "${min}" -a -n "${max}" ] && {
-            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && eval ${handler}
-        }
-    }
+	[ "${ACTION}" = "${action}" -a "${BUTTON}" = "${button}" -a -n "${handler}" ] && {
+		[ -z "${min}" -o -z "${max}" ] && eval ${handler}
+		[ -n "${min}" -a -n "${max}" ] && {
+			[ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && eval ${handler}
+		}
+	}
 }
 
 config_load system
 config_foreach do_button button
 EOF
 
-case "$(board_name)" in
-	aqara,zhwg11lm |\
-	xiaomi,dgnwg05lm )
-		cat << "EOF" > /usr/bin/reset_wifi_config
-#!/bin/sh
-{
-    mac1="$(ucode /usr/share/hostap/wdev.uc phy0 get_macaddr id=1)" || exit 1
+config_load system
+config_foreach remove_old_reset_button button
 
-    rm -f /etc/config/network
-    /bin/config_generate generate_static_network
-    uci delete network.@device[0].ports
-    uci set network.@device[0].bridge_empty='1'
-    uci set network.wwan='interface'
-    uci set network.wwan.proto='dhcp'
-    uci commit network
+# Use named sections to avoid duplicate bindings on upgrades.
+uci batch <<-'EOF'
+	set system.reset_wifi='button'
+	set system.reset_wifi.button='BTN_0'
+	set system.reset_wifi.action='released'
+	set system.reset_wifi.min='8'
+	set system.reset_wifi.max='14'
+	set system.reset_wifi.handler='/usr/bin/reset_wifi_config'
 
-    rm -f /etc/config/wireless
-    wifi config
-    uci delete wireless.@wifi-iface[0].disabled
-    uci set wireless.@wifi-device[0].channel='1'
-    uci set wireless.@wifi-device[0].band='2g'
-    uci set wireless.@wifi-device[0].country='US'
-    uci set "wireless.@wifi-iface[0].macaddr=$mac1"
-    uci commit wireless
-    ubus call network restart
-    for i in 1 2 3
-    do
-        echo 128 > /sys/class/leds/red/brightness
-	echo 128 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-	sleep 1
-        echo 0 > /sys/class/leds/red/brightness
-	echo 0 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-	sleep 1
-    done
-}
+	set system.reset_overlay='button'
+	set system.reset_overlay.button='BTN_0'
+	set system.reset_overlay.action='released'
+	set system.reset_overlay.min='16'
+	set system.reset_overlay.max='25'
+	set system.reset_overlay.handler='/usr/bin/reset_overlay'
 EOF
-		cat << "EOF" > /usr/bin/reset_overlay
-#!/bin/sh
-{
-    rm -rf /overlay/upper/.* /overlay/upper/*
 
-    for i in 1 2 3
-    do
-        echo 180 > /sys/class/leds/red/brightness
-        echo 0 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-        echo 0 > /sys/class/leds/red/brightness
-        echo 0 > /sys/class/leds/green/brightness
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-    done
-    reboot
-}
-EOF
-	;;
-	geniatech,gtw360 )
-		cat << "EOF" > /usr/bin/reset_wifi_config
-#!/bin/sh
-{
-    rm -f /etc/config/network
-    /bin/config_generate generate_static_network
-    uci set network.wwan='interface'
-    uci set network.wwan.proto='dhcp'
-    uci commit network
-
-    rm -f /etc/config/wireless
-    wifi config
-    uci delete wireless.@wifi-device[0].disabled
-    uci delete wireless.@wifi-iface[0].disabled
-    uci set wireless.@wifi-device[0].channel='1'
-    uci set wireless.@wifi-device[0].band='2g'
-    uci set wireless.@wifi-device[0].country='US'
-    uci delete wireless.@wifi-device[0].htmode
-    uci commit wireless
-    ubus call network restart
-    for i in 1 2 3
-    do
-        echo 100 > /sys/class/leds/amber/brightness
-	sleep 1
-        echo 0 > /sys/class/leds/amber/brightness
-	sleep 1
-    done
-}
-EOF
-		cat << "EOF" > /usr/bin/reset_overlay
-#!/bin/sh
-{
-    rm -rf /overlay/upper/.* /overlay/upper/*
-
-    for i in 1 2 3
-    do
-        echo 100 > /sys/class/leds/blue/brightness
-        sleep 1
-        echo 0 > /sys/class/leds/blue/brightness
-        sleep 1
-    done
-    reboot
-}
-EOF
-	;;
-esac
-
-uci add system button
-uci set system.@button[-1].button="BTN_0"
-uci set system.@button[-1].action="released"
-uci set system.@button[-1].min="8"
-uci set system.@button[-1].max="14"
-uci set system.@button[-1].handler="/usr/bin/reset_wifi_config"
-uci add system button
-uci set system.@button[-1].button="BTN_0"
-uci set system.@button[-1].action="released"
-uci set system.@button[-1].min="16"
-uci set system.@button[-1].max="25"
-uci set system.@button[-1].handler="/usr/bin/reset_overlay"
 uci commit system
 
 exit 0
