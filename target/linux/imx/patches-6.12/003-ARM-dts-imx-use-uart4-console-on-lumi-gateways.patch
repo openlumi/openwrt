@@ -1,0 +1,50 @@
+--- a/arch/arm/boot/dts/nxp/imx/imx6ull-xiaomi-lumi.dtsi
++++ b/arch/arm/boot/dts/nxp/imx/imx6ull-xiaomi-lumi.dtsi
+@@ -9,7 +9,7 @@
+ 	compatible = "xiaomi,gateway-lumi", "fsl,imx6ull";
+ 
+ 	chosen {
+-		stdout-path = &uart1;
++		stdout-path = &uart4;
+ 	};
+ 
+ 	memory@80000000 {
+@@ -150,6 +150,12 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart3>;
+ 	uart-has-rtscts;
++	status = "okay";
++};
++
++&uart4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart4>;
+ 	status = "okay";
+ };
+ 
+@@ -235,6 +241,13 @@
+ 		>;
+ 	};
+ 
++	pinctrl_uart4: uart4grp {
++		fsl,pins = <
++			MX6UL_PAD_UART4_TX_DATA__UART4_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART4_RX_DATA__UART4_DCE_RX 0x1b0b1
++		>;
++	};
++
+ 	pinctrl_pwm1: pwm1grp {
+ 		fsl,pins = <
+ 			MX6UL_PAD_GPIO1_IO08__PWM1_OUT   0x110b0
+@@ -293,10 +306,7 @@
+ };
+ 
+ &i2c1 {
+-	clock-frequency = <100000>;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_i2c1>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &usdhc1 {

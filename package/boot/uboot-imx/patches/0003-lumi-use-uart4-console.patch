@@ -1,0 +1,105 @@
+--- a/arch/arm/dts/imx6ull-xiaomi-lumi.dts
++++ b/arch/arm/dts/imx6ull-xiaomi-lumi.dts
+@@ -12,6 +12,10 @@
+ 	model = "Xiaomi Lumi Gateway";
+ 	compatible = "xiaomi,gateway-lumi", "xiaomi,dgnwg05lm", "aqara,zhwg11lm",
+                "fsl,imx6ull-14x14-evk", "fsl,imx6ull";
++
++	chosen {
++		stdout-path = &uart4;
++	};
+ 
+ 	backlight_display: backlight-display {
+ 		status = "disabled";
+@@ -126,6 +130,13 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart3>;
+ 	uart-has-rtscts;
++	status = "okay";
++};
++
++&uart4 {
++	u-boot,dm-pre-reloc;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart4>;
+ 	status = "okay";
+ };
+ 
+@@ -171,6 +182,13 @@
+ 		>;
+ 	};
+ 
++	pinctrl_uart4: uart4grp {
++		fsl,pins = <
++			MX6UL_PAD_UART4_TX_DATA__UART4_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART4_RX_DATA__UART4_DCE_RX 0x1b0b1
++		>;
++	};
++
+ 	pinctrl_pwm2: pwm2grp {
+ 		fsl,pins = <
+ 			MX6UL_PAD_GPIO1_IO09__PWM2_OUT   0x110b0
+@@ -240,10 +258,7 @@
+ };
+ 
+ &i2c1 {
+-	clock-frequency = <100000>;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_i2c1>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &reg_sd1_vmmc {
+--- a/board/xiaomi/dgnwg05lm/lumi.c
++++ b/board/xiaomi/dgnwg05lm/lumi.c
+@@ -108,14 +108,14 @@
+ }
+ #endif
+ 
+-static iomux_v3_cfg_t const uart1_pads[] = {
+-	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+-	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
++static iomux_v3_cfg_t const uart4_pads[] = {
++	MX6_PAD_UART4_TX_DATA__UART4_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
++	MX6_PAD_UART4_RX_DATA__UART4_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+ };
+ 
+ static void setup_iomux_uart(void)
+ {
+-	SETUP_IOMUX_PADS(uart1_pads);
++	SETUP_IOMUX_PADS(uart4_pads);
+ }
+ 
+ #ifdef CONFIG_NAND_MXS
+--- a/include/configs/xiaomi_dgnwg05lm.h
++++ b/include/configs/xiaomi_dgnwg05lm.h
+@@ -22,7 +22,7 @@
+ //#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
+ 
+ #define CONFIG_MXC_UART
+-#define CONFIG_MXC_UART_BASE		UART1_BASE
++#define CONFIG_MXC_UART_BASE		UART4_BASE
+ 
+ /* MMC Configs */
+ #ifdef CONFIG_FSL_USDHC
+@@ -60,16 +60,16 @@
+ #define CONFIG_MTDPARTS_DEFAULT "mtdparts=gpmi-nand:3m(boot),7m(kernel),1m(dtb),-(ubi)"
+ #endif
+ 
+-#define CONFIG_BOOTARGS_SQUASH "console=ttymxc0,115200 ubi.mtd=3 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs " \
++#define CONFIG_BOOTARGS_SQUASH "console=ttymxc3,115200 ubi.mtd=3 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs " \
+ 	BOOTARGS_CMA_SIZE \
+ 	CONFIG_MTDPARTS_DEFAULT
+ 
+-#define CONFIG_BOOTARGS_UBI "console=ttymxc0,115200 ubi.mtd=3 root=ubi0:ubi rootfstype=ubifs " \
++#define CONFIG_BOOTARGS_UBI "console=ttymxc3,115200 ubi.mtd=3 root=ubi0:ubi rootfstype=ubifs " \
+ 	BOOTARGS_CMA_SIZE \
+ 	CONFIG_MTDPARTS_DEFAULT
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-    "mfgtool_args=setenv bootargs console=ttymxc0,115200 " \
++    "mfgtool_args=setenv bootargs console=ttymxc3,115200 " \
+         BOOTARGS_CMA_SIZE \
+         "rdinit=/linuxrc " \
+         "g_mass_storage.stall=0 g_mass_storage.removable=1 " \
